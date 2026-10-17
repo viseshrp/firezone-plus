@@ -585,7 +585,8 @@ defmodule FzHttpWeb.Acceptance.AdminTest do
       session
       |> visit(~p"/settings/account")
       |> assert_el(Query.text("Active Sessions"))
-      |> assert_el(Query.text(user_agent))
+      # Navigation can leave overlapping sockets with the same browser agent.
+      |> assert_el(Query.text(user_agent, minimum: 1))
     end
 
     feature "can delete own account if there are other admins", %{session: session} do
