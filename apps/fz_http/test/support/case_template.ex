@@ -4,11 +4,11 @@ defmodule FzHttp.CaseTemplate do
   helpers to all tests.
   """
 
-  use ExUnit.CaseTemplate
-  alias Ecto.Adapters.SQL.Sandbox
-
-  using do
+  defmacro __using__(_opts) do
     quote do
+      use ExUnit.CaseTemplate
+      alias Ecto.Adapters.SQL.Sandbox
+
       setup tags do
         :ok = Sandbox.checkout(FzHttp.Repo)
 

@@ -19,10 +19,12 @@ defmodule FzHttpWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: FzHttpWeb
+      use Phoenix.Controller,
+        formats: [html: "View", json: "View", xml: "View"],
+        layouts: [html: FzHttpWeb.LayoutView]
 
       import Plug.Conn
-      import FzHttpWeb.Gettext
+      use Gettext, backend: FzHttpWeb.Gettext
       import Phoenix.LiveView.Controller
       import FzHttpWeb.ControllerHelpers
       import FzHttpWeb.DocHelpers
@@ -41,14 +43,16 @@ defmodule FzHttpWeb do
       import Phoenix.Controller, only: [view_module: 1]
 
       # Use all HTML functionality (forms, tags, etc)
-      use Phoenix.HTML
+      import Phoenix.HTML
+      import Phoenix.HTML.Form
+      use PhoenixHTMLHelpers
 
       # Use all LiveView functionality
       use Phoenix.Component, global_prefixes: ~w(x-)
 
       import FzHttpWeb.ErrorHelpers
       import FzHttpWeb.AuthorizationHelpers
-      import FzHttpWeb.Gettext
+      use Gettext, backend: FzHttpWeb.Gettext
       import FzHttpWeb.LiveHelpers
 
       unquote(verified_routes())
@@ -80,8 +84,7 @@ defmodule FzHttpWeb do
   def live_component do
     quote do
       import Phoenix.LiveView
-      use Phoenix.LiveComponent
-      use Phoenix.Component, global_prefixes: ~w(x-)
+      use Phoenix.LiveComponent, global_prefixes: ~w(x-)
       import FzHttpWeb.LiveHelpers
 
       unquote(view_helpers())
@@ -100,7 +103,7 @@ defmodule FzHttpWeb do
   def channel do
     quote do
       use Phoenix.Channel
-      import FzHttpWeb.Gettext
+      use Gettext, backend: FzHttpWeb.Gettext
     end
   end
 
@@ -113,7 +116,9 @@ defmodule FzHttpWeb do
   defp view_helpers do
     quote do
       # Use all HTML functionality (forms, tags, etc)
-      use Phoenix.HTML
+      import Phoenix.HTML
+      import Phoenix.HTML.Form
+      use PhoenixHTMLHelpers
 
       # Import LiveView helpers (live_render, live_component, live_patch, etc)
       import Phoenix.Component
@@ -125,7 +130,7 @@ defmodule FzHttpWeb do
       import FzHttpWeb.AuthorizationHelpers
 
       import FzHttpWeb.ErrorHelpers
-      import FzHttpWeb.Gettext
+      use Gettext, backend: FzHttpWeb.Gettext
 
       unquote(verified_routes())
     end

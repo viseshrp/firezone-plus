@@ -16,7 +16,13 @@ defmodule FzHttpWeb.ErrorView do
   # "Not Found".
   def template_not_found(template, assigns) do
     default_reason = Phoenix.Controller.status_message_from_template(template)
-    reason = assigns[:reason] || default_reason
+
+    reason =
+      case assigns[:reason] do
+        nil -> default_reason
+        reason when is_binary(reason) -> reason
+        _exception -> default_reason
+      end
 
     if String.ends_with?(template, ".json") do
       %{"error" => reason}

@@ -67,6 +67,8 @@ if config_env() == :prod do
     enabled: compile_config!(:telemetry_enabled),
     id: compile_config!(:telemetry_id)
 
+  config :posthog, enable: compile_config!(:telemetry_enabled)
+
   config :fz_http,
     cookie_secure: compile_config!(:phoenix_secure_cookies),
     cookie_signing_salt: compile_config!(:cookie_signing_salt),

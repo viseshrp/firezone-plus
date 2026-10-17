@@ -5,7 +5,7 @@ defmodule FzHttp.Repo.Migrations.MigratePksToUuid do
     ## connectivity_checks
     alter table("connectivity_checks") do
       remove(:id)
-      add(:id, :binary_id, primary_key: true, default: fragment("gen_random_uuid()"))
+      add(:id, :binary_id, primary_key: true, null: false, default: fragment("gen_random_uuid()"))
     end
 
     ## devices
@@ -14,7 +14,7 @@ defmodule FzHttp.Repo.Migrations.MigratePksToUuid do
     rename(table("devices"), :uuid, to: :id)
 
     alter table("devices") do
-      modify(:id, :binary_id, primary_key: true)
+      modify(:id, :binary_id, primary_key: true, null: false)
       remove(:id_tmp)
     end
 
@@ -24,14 +24,14 @@ defmodule FzHttp.Repo.Migrations.MigratePksToUuid do
     rename(table("rules"), :uuid, to: :id)
 
     alter table("rules") do
-      modify(:id, :binary_id, primary_key: true)
+      modify(:id, :binary_id, primary_key: true, null: false)
       remove(:id_tmp)
     end
 
     ## oidc_connections
     alter table("oidc_connections") do
       remove(:id)
-      add(:id, :binary_id, primary_key: true, default: fragment("gen_random_uuid()"))
+      add(:id, :binary_id, primary_key: true, null: false, default: fragment("gen_random_uuid()"))
     end
 
     ## users
@@ -180,7 +180,7 @@ defmodule FzHttp.Repo.Migrations.MigratePksToUuid do
     execute("ALTER INDEX users_uuid_index RENAME TO users_pkey")
 
     alter table("users") do
-      modify(:id, :binary_id, primary_key: true)
+      modify(:id, :binary_id, primary_key: true, null: false)
     end
   end
 end

@@ -7,8 +7,6 @@ defmodule FzHttpWeb.NotificationsLive.Index do
   alias FzHttp.Notifications
   alias Phoenix.PubSub
 
-  require Logger
-
   @topic "notifications_live"
   @page_title "Notifications"
   @page_subtitle "Persisted notifications will appear below."

@@ -56,7 +56,7 @@ defmodule FzHttpWeb.UserLive.Show do
           {:noreply,
            socket
            |> put_flash(:info, "User deleted successfully.")
-           |> push_redirect(to: ~p"/users")}
+           |> push_navigate(to: ~p"/users")}
 
         {:error, changeset} ->
           {:noreply,

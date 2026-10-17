@@ -14,7 +14,7 @@ defmodule FzWall.MixProject do
       config_path: "../../config/config.exs",
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
-      elixir: "~> 1.12",
+      elixir: "~> 1.20",
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
@@ -40,7 +40,7 @@ defmodule FzWall.MixProject do
   defp deps do
     [
       {:fz_http, in_umbrella: true},
-      {:cidr, github: "firezone/cidr-elixir"}
+      {:cidr, github: "firezone/cidr-elixir", ref: "a32125127a7910f476734f45391ba6d37036ee11"}
     ]
   end
 end

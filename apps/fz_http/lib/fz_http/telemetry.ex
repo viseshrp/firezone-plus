@@ -5,7 +5,6 @@ defmodule FzHttp.Telemetry do
   use Supervisor
   alias FzHttp.{Devices, Auth.MFA, Users}
   alias FzHttp.Telemetry.{Timer, PostHog}
-  require Logger
 
   def start_link(opts) do
     Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
@@ -164,16 +163,16 @@ defmodule FzHttp.Telemetry do
   end
 
   defp external_database?(repo_conf) when is_map_key(repo_conf, :hostname) do
-    is_external_db?(repo_conf.hostname)
+    external_db_host?(repo_conf.hostname)
   end
 
   defp external_database?(repo_conf) when is_map_key(repo_conf, :url) do
     %{host: host} = URI.parse(repo_conf.url)
 
-    is_external_db?(host)
+    external_db_host?(host)
   end
 
-  defp is_external_db?(host) do
+  defp external_db_host?(host) do
     host != "localhost" && host != "127.0.0.1"
   end
 

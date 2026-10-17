@@ -6,7 +6,9 @@ defmodule FzHttp.Telemetry.PostHog do
 
     Task.start(fn ->
       # Detach from calling process to prevent blocking
-      Posthog.capture(event, metadata)
+      properties = Map.new(metadata)
+      {distinct_id, properties} = Map.pop!(properties, :distinct_id)
+      PostHog.bare_capture(event, distinct_id, properties)
     end)
   end
 
@@ -14,7 +16,11 @@ defmodule FzHttp.Telemetry.PostHog do
     Logger.debug("Capturing events #{inspect(events)}")
 
     Task.start(fn ->
-      Posthog.batch(events)
+      Enum.each(events, fn event ->
+        properties = Map.new(event.properties)
+        {distinct_id, properties} = Map.pop!(properties, :distinct_id)
+        PostHog.bare_capture(event.event, distinct_id, properties)
+      end)
     end)
   end
 end

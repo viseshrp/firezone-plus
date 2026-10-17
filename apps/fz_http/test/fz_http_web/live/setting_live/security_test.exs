@@ -14,12 +14,12 @@ defmodule FzHttpWeb.SettingLive.SecurityTest do
     test "selects the chosen option", %{admin_conn: conn} do
       path = ~p"/settings/security"
       {:ok, _view, html} = live(conn, path)
-      assert html =~ ~s|<option selected="selected" value="0">Never</option>|
+      assert html =~ ~s|<option selected="" value="0">Never</option>|
 
       FzHttp.Config.put_config!(:vpn_session_duration, 3_600)
 
       {:ok, _view, html} = live(conn, path)
-      assert html =~ ~s|<option selected="selected" value="3600">Every Hour</option>|
+      assert html =~ ~s|<option selected="" value="3600">Every Hour</option>|
     end
   end
 
@@ -72,10 +72,10 @@ defmodule FzHttpWeb.SettingLive.SecurityTest do
       @tag conf_key: key, conf_val: val
       test "toggle #{key} when value in db is true", %{admin_conn: conn, path: path} do
         {:ok, view, _html} = live(conn, path)
-        html = view |> element("input[phx-value-config=#{unquote(key)}}]") |> render()
+        html = view |> element("input[phx-value-config='#{unquote(key)}']") |> render()
         assert html =~ "checked"
 
-        view |> element("input[phx-value-config=#{unquote(key)}]") |> render_click()
+        view |> element("input[phx-value-config='#{unquote(key)}']") |> render_click()
         assert FzHttp.Config.fetch_config!(unquote(key)) == false
       end
     end
@@ -89,10 +89,10 @@ defmodule FzHttpWeb.SettingLive.SecurityTest do
       @tag conf_key: key, conf_val: val
       test "toggle #{key} when value in db is false", %{admin_conn: conn, path: path} do
         {:ok, view, _html} = live(conn, path)
-        html = view |> element("input[phx-value-config=#{unquote(key)}]") |> render()
+        html = view |> element("input[phx-value-config='#{unquote(key)}']") |> render()
         refute html =~ "checked"
 
-        view |> element("input[phx-value-config=#{unquote(key)}]") |> render_click()
+        view |> element("input[phx-value-config='#{unquote(key)}']") |> render_click()
         assert FzHttp.Config.fetch_config!(unquote(key)) == true
       end
     end
@@ -311,7 +311,7 @@ defmodule FzHttpWeb.SettingLive.SecurityTest do
       html =
         view
         |> element("#saml-form")
-        |> render_submit(%{"metadata" => "updated"})
+        |> render_submit(%{"saml_identity_provider" => %{"metadata" => "updated"}})
 
       # stays on the modal
       assert html =~ ~s|<p class="modal-card-title">SAML Configuration</p>|

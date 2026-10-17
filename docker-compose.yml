@@ -9,7 +9,7 @@ x-deploy: &default-deploy
 services:
 
   firezone:
-    image: firezone:latest # or for arm: l4rm4nd/firezone:7.2.x-arm64
+    image: firezone-plus:local
     build:
       context: .
       dockerfile: Dockerfile.prod
@@ -48,7 +48,9 @@ services:
     # #- traefik.http.routers.firezone.middlewares=local-ipwhitelist@file
 
   postgres:
-    image: postgres:16-alpine
+    # Existing PostgreSQL installations require a dump/restore before this major upgrade.
+    # See MAINTENANCE.md. Never reuse an older database directory directly.
+    image: postgres:18.6-alpine
     container_name: firezone-db
     expose:
       - 5432

@@ -63,7 +63,7 @@ defmodule FzHttpWeb.NotificationsLive.IndexTest do
     {notification, _} = List.pop_at(notifications, index)
 
     view
-    |> element(".delete[phx-value-index=#{index}")
+    |> element(".delete[phx-value-index='#{index}']")
     |> render_click()
 
     html =

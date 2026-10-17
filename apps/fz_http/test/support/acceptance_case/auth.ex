@@ -25,10 +25,9 @@ defmodule FzHttpWeb.AcceptanceCase.Auth do
   defp fetch_cookie(session, key) do
     cookies = Wallaby.Browser.cookies(session)
 
-    if cookie = Enum.find(cookies, fn cookie -> Map.get(cookie, "name") == key end) do
-      Map.fetch(cookie, "value")
-    else
-      :error
+    case Enum.find(cookies, fn cookie -> Map.get(cookie, "name") == key end) do
+      nil -> :error
+      cookie -> Map.fetch(cookie, "value")
     end
   end
 

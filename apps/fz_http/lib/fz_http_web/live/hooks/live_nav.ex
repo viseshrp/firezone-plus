@@ -10,6 +10,10 @@ defmodule FzHttpWeb.LiveNav do
     {:cont, assign(socket, path: nil)}
   end
 
+  def on_mount(_role, :not_mounted_at_router, _session, socket) do
+    {:cont, assign(socket, path: nil)}
+  end
+
   def on_mount(_role, _params, _session, socket) do
     {:cont, attach_hook(socket, :url, :handle_params, &assign_path/3)}
   end

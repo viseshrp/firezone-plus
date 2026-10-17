@@ -2,7 +2,6 @@ defmodule FzHttpWeb.MailerCase do
   @moduledoc """
   A case template for Mailers.
   """
-  use ExUnit.CaseTemplate
   use FzHttp.CaseTemplate
 
   using do

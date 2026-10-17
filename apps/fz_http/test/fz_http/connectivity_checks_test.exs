@@ -71,7 +71,12 @@ defmodule FzHttp.ConnectivityChecksTest do
       request = Finch.build(:post, "http://localhost:#{bypass.port}/")
 
       assert {:error, reason} = check_connectivity(request)
-      assert reason == %Mint.TransportError{reason: :econnrefused}
+
+      assert reason == %Finch.TransportError{
+               reason: :econnrefused,
+               source: %Mint.TransportError{reason: :econnrefused}
+             }
+
       refute Repo.one(ConnectivityChecks.ConnectivityCheck)
     end
   end

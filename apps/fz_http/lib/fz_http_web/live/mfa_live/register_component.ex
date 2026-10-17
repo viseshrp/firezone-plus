@@ -43,7 +43,7 @@ defmodule FzHttpWeb.MFA.RegisterComponent do
 
     ~H"""
     <div id="register-mfa">
-      <%= live_modal(
+      {live_modal(
         FzHttpWeb.MFA.RegisterStepsComponent.render_step(%{
           secret: @secret,
           step: @step,
@@ -56,7 +56,7 @@ defmodule FzHttpWeb.MFA.RegisterComponent do
         title: "Registering MFA Method",
         form: "mfa-method-form",
         button_text: if(@step == :save, do: "Save", else: "Next")
-      ) %>
+      )}
     </div>
     """
   end
@@ -100,7 +100,7 @@ defmodule FzHttpWeb.MFA.RegisterComponent do
         socket =
           socket
           |> put_flash(:info, "MFA method added!")
-          |> push_redirect(to: socket.assigns.return_to)
+          |> push_navigate(to: socket.assigns.return_to)
 
         {:noreply, socket}
 

@@ -136,7 +136,8 @@ config :openid_connect, json_library: Jason
 
 # Public API key for telemetry
 config :posthog,
-  api_url: "https://t.firez.one",
+  api_host: "https://t.firez.one",
+  enable_error_tracking: false,
   api_key: "phc_ubuPhiqqjMdedpmbWpG2Ak3axqv5eMVhFDNBaXl9UZK"
 
 config :ueberauth, Ueberauth,

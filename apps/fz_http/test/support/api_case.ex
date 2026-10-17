@@ -14,7 +14,6 @@ defmodule FzHttpWeb.ApiCase do
   by setting `use FzHttpWeb.ConnCase, async: true`, although
   this option is not recommended for other databases.
   """
-  use ExUnit.CaseTemplate
   use FzHttp.CaseTemplate
 
   alias FzHttp.{

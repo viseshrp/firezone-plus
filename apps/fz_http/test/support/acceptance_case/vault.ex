@@ -74,10 +74,10 @@ defmodule FzHttpWeb.AcceptanceCase.Vault do
   def userpass_flow(session, oidc_login, oidc_password) do
     session
     |> assert_text("Method")
-    |> fill_in(Query.css("#select-ember40"), with: "userpass")
+    |> fill_in(Query.css("select[name=selectedAuthMethod]"), with: "userpass")
     |> fill_in(Query.fillable_field("username"), with: oidc_login)
     |> fill_in(Query.fillable_field("password"), with: oidc_password)
-    |> click(Query.button("Sign In"))
+    |> click(Query.button("Sign in"))
   end
 
   defp request(method, path, params_or_body \\ nil) do
@@ -104,7 +104,13 @@ defmodule FzHttpWeb.AcceptanceCase.Vault do
         :ok
 
       {:ok, status, _headers, body} ->
-        {:ok, {status, Jason.decode!(body)}}
+        decoded = Jason.decode!(body)
+
+        if method == :put and status in 200..299 and decoded["data"] == nil do
+          :ok
+        else
+          {:ok, {status, decoded}}
+        end
 
       {:error, reason} ->
         {:error, reason}

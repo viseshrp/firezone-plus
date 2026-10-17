@@ -4,7 +4,6 @@ defmodule FzVpn.Server do
   """
 
   use GenServer
-  require Logger
 
   alias FzVpn.Interface
   alias FzVpn.Keypair

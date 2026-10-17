@@ -19,7 +19,7 @@ defmodule FzWall.Shell do
         """
 
         if opts[:suppress] do
-          Logger.warn(error_msg)
+          Logger.warning(error_msg)
         else
           raise error_msg
         end

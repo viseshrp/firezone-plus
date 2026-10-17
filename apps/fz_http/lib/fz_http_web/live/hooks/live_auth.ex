@@ -17,7 +17,7 @@ defmodule FzHttpWeb.LiveAuth do
         |> authorize_role(role)
 
       nil ->
-        Logger.warn("Could not get_current_subject from session in LiveAuth.on_mount/4.")
+        Logger.warning("Could not get_current_subject from session in LiveAuth.on_mount/4.")
         {:halt, not_authorized(socket)}
     end
   end

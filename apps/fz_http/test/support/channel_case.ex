@@ -15,7 +15,6 @@ defmodule FzHttpWeb.ChannelCase do
   this option is not recommended for other databases.
   """
 
-  use ExUnit.CaseTemplate
   use FzHttp.CaseTemplate
 
   using do

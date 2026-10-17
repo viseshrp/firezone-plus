@@ -63,43 +63,21 @@ defmodule FzHttpWeb.AuthController do
       when is_binary(provider_id) do
     with :ok <- State.verify_state(conn, state),
          {:ok, config} <- Auth.fetch_oidc_provider_config(provider_id) do
-      # Build token request parameters with proper OAuth2 format
-      # Convert PKCE params to string keys for consistency
-      pkce_params =
-        conn
-        |> PKCE.token_params()
-        |> Enum.map(fn {k, v} -> {to_string(k), v} end)
-        |> Map.new()
-
+      # The SDK merges atom-keyed defaults before form encoding. String keys
+      # would produce duplicate grant_type fields in the token request.
       token_params =
         %{
-          "code" => params["code"],
-          "grant_type" => "authorization_code",
-          "redirect_uri" => config.redirect_uri
+          code: params["code"],
+          grant_type: "authorization_code",
+          redirect_uri: config.redirect_uri
         }
-        |> Map.merge(pkce_params)
+        |> Map.merge(PKCE.token_params(conn))
 
       case OpenIDConnect.fetch_tokens(config, token_params) do
         {:ok, tokens} ->
           case OpenIDConnect.verify(config, tokens["id_token"]) do
             {:ok, claims} ->
-              case UserFromAuth.find_or_create(provider_id, claims) do
-                {:ok, user} ->
-                  # only first-time connect will include refresh token
-                  # XXX: Remove this when SCIM 2.0 is implemented
-                  with %{"refresh_token" => refresh_token} <- tokens do
-                    FzHttp.Auth.OIDC.create_connection(user.id, provider_id, refresh_token)
-                  end
-
-                  conn
-                  |> put_session("id_token", tokens["id_token"])
-                  |> do_sign_in(user, %{provider: provider_id})
-
-                {:error, reason} ->
-                  conn
-                  |> put_flash(:error, "Error signing in: #{reason}")
-                  |> redirect(to: ~p"/")
-              end
+              oidc_sign_in(conn, provider_id, claims, tokens)
 
             {:error, error} ->
               msg = "An OpenIDConnect error occurred. Details: #{inspect(error)}"
@@ -126,6 +104,25 @@ defmodule FzHttpWeb.AuthController do
 
         conn
         |> put_flash(:error, msg)
+        |> redirect(to: ~p"/")
+    end
+  end
+
+  defp oidc_sign_in(conn, provider_id, claims, tokens) do
+    case UserFromAuth.find_or_create(provider_id, claims) do
+      {:ok, user} ->
+        # Only the first connection may include a refresh token.
+        with %{"refresh_token" => refresh_token} <- tokens do
+          FzHttp.Auth.OIDC.create_connection(user.id, provider_id, refresh_token)
+        end
+
+        conn
+        |> put_session("id_token", tokens["id_token"])
+        |> do_sign_in(user, %{provider: provider_id})
+
+      {:error, reason} ->
+        conn
+        |> put_flash(:error, "Error signing in: #{reason}")
         |> redirect(to: ~p"/")
     end
   end

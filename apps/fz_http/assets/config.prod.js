@@ -25,7 +25,7 @@ module.exports.config = {
   plugins: [
     tildePlugin,
     sassPlugin({
-      loadPaths: ['.'],
+      loadPaths: ['.', 'node_modules'],
     })],
   loader: {
     '.eot': 'file',

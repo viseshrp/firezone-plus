@@ -1,5 +1,5 @@
 defmodule FzHttp.RulesTest do
-  use FzHttp.DataCase, async: true
+  use FzHttp.DataCase, async: false
   import FzHttp.Rules
   alias FzHttp.{UsersFixtures, SubjectFixtures, RulesFixtures}
   alias FzHttp.Rules

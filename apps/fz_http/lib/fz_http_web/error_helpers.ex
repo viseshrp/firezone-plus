@@ -2,7 +2,7 @@ defmodule FzHttpWeb.ErrorHelpers do
   @moduledoc """
   Conveniences for translating and building error messages.
   """
-  use Phoenix.HTML
+  use PhoenixHTMLHelpers
   import Ecto.Changeset, only: [traverse_errors: 2]
 
   def aggregated_errors(%Ecto.Changeset{} = changeset) do

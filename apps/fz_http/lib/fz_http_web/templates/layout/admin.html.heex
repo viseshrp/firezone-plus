@@ -48,9 +48,7 @@
                 <% end %>
               </div>
             </div>
-            <%= Phoenix.Component.live_render(@conn, FzHttpWeb.NotificationsLive.Badge,
-              router: FzHttpWeb.Router
-            ) %>
+            <%= Phoenix.Component.live_render(@conn, FzHttpWeb.NotificationsLive.Badge) %>
             <a
               target="_blank"
               href="https://github.com/l4rm4nd/firezone"
@@ -79,7 +77,8 @@
         </div>
       </nav>
 
-      <%= if !is_nil(Phoenix.Flash.get(@flash, :info)) or !is_nil(Phoenix.Flash.get(@flash, :error)) do %>
+      <%= if !assigns[:live_module] and
+               (!is_nil(Phoenix.Flash.get(@flash, :info)) or !is_nil(Phoenix.Flash.get(@flash, :error))) do %>
         <div class="block flash-squeeze">
           <%= if Phoenix.Flash.get(@flash, :info) do %>
             <div class="notification is-info">

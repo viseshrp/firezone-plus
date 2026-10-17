@@ -1,300 +1,152 @@
-# Firezone Maintenance Guide
+# Firezone Plus maintenance
 
-Reference notes for building the Docker image and keeping dependencies current.
+Docker is the supported deployment method. The inherited `omnibus/` native
+installer sources are retained for history and are not maintained or tested.
 
----
+## Dependency refresh: October 17, 2026
 
-## Table of Contents
+This fork starts from l4rm4nd/firezone v7.2.24. The refresh uses Elixir 1.20.4,
+OTP 29, Phoenix 1.8.15, LiveView 1.2.12, Phoenix HTML 4.3.0, Ecto 3.14,
+Guardian DB 3.0, Argon2 4.1, OpenID Connect 1.0.1, and PostHog 2.16.
+The Docker build supplies Node 24 LTS and current Alpine packages.
+The website uses Next 16, React 19, Tailwind 4, and TypeScript 7.
 
-- [Build the Docker Image](#build-the-docker-image)
-- [Deploy / Run the Stack](#deploy--run-the-stack)
-- [Update Elixir / Mix Dependencies](#update-elixir--mix-dependencies)
-- [Update Ruby Gems (omnibus)](#update-ruby-gems-omnibus)
-- [Update npm Packages (website)](#update-npm-packages-website)
-- [Update Frontend Assets (fz_http)](#update-frontend-assets-fz_http)
-- [Responding to Dependabot / Security Alerts](#responding-to-dependabot--security-alerts)
-- [Known Quirks & Gotchas](#known-quirks--gotchas)
+Compatibility changes cover Gettext backends, HTML helpers, LiveView components
+and navigation, enum validation, embedded changesets, telemetry, browser fixtures,
+and the website's MDX, Flowbite, fonts, and CSS pipeline. The old OpenID Connect
+build-time JSON patch is removed: Elixir now provides the required JSON module.
+Existing telemetry settings remain authoritative; automatic error tracking is off.
 
----
+Fresh PostgreSQL 18 installations require explicit non-null UUID primary keys
+in the historical migration. Already-recorded migrations are not rerun. The
+application schema still has the same 57 migrations. This application retains
+its existing API-token storage and does not configure Guardian DB's optional
+token adapter; the library upgrade adds no application database migration.
 
-## Build the Docker Image
+### Retained versions and audit findings
 
-```bash
-# Standard build (uses Dockerfile.prod)
-docker build -f Dockerfile.prod -t firezone:latest .
+- Bulma stays at 0.9.4. The retained dashboard extensions import Sass utilities
+  removed by Bulma 1; that upgrade needs a separate theme port.
+- The Firezone CIDR, esaml, and Samly forks are pinned to their latest existing
+  commits. They contain Firezone-specific behavior, including SAML provider
+  refresh support. Replacing them with unrelated Hex versions loses that behavior.
+- Decimal 3 and Hackney 4 override stale optional upper bounds in older wrappers.
+  Byte formatting, HTTP tests, and browser authentication cover the used APIs.
+- Node 24 LTS and matching Node type definitions are intentional; Node 26 is
+  outside this maintenance baseline. Wireguardex 0.4.0 is its latest release.
+- The SAML identity-provider test image has no newer publisher release and is
+  pinned by digest. Its old bundled software is confined to the test fixture.
 
-# Build with an explicit release version tag
+The application asset audit reports zero vulnerabilities. The website audit
+still reports the `braces` advisory through `next-sitemap`, `fast-glob`, and
+`micromatch` (four affected dependency entries). No patched braces release is
+available; npm's suggested fix downgrades next-sitemap. This is website build
+tooling, not part of the VPN runtime image.
+See [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
+
+Hex still reports three advisories in current releases:
+[Cloak AES-CTR](https://cna.erlef.org/cves/CVE-2026-95105.html),
+[Cloak PBKDF2](https://cna.erlef.org/cves/CVE-2026-94206.html), and
+[Cowlib structured headers](https://cna.erlef.org/cves/CVE-2026-43966.html).
+This application's vault already uses AES-GCM and does not use Cloak PBKDF2.
+Cowboy 2.20 includes the response-header rejection described by the Cowlib
+advisory as a server-side mitigation. These observations do not make the package
+advisories disappear or establish that all dependency vulnerabilities are fixed.
+
+## Build
+
+```sh
 docker build -f Dockerfile.prod \
-  --build-arg VERSION=7.2.0 \
-  -t firezone:7.2.0 .
+  --build-arg VERSION=7.2.25-plus.1 \
+  --build-arg VCS_REF="$(git rev-parse HEAD)" \
+  -t firezone-plus:7.2.25-plus.1 .
 
-# ARM64 cross-build (requires docker buildx)
-docker buildx build --platform linux/arm64 \
-  -f Dockerfile.prod \
-  -t firezone:latest-arm64 \
-  --load .
+# Build for the Raspberry Pi deployment from an ARM64 Mac:
+docker buildx build --platform linux/arm64 --load \
+  -f Dockerfile.prod --build-arg VERSION=7.2.25-plus.1 \
+  --build-arg VCS_REF="$(git rev-parse HEAD)" \
+  -t firezone-plus:7.2.25-plus.1 .
 ```
 
-### What the build does (Dockerfile.prod stages)
+The production image contains the compiled OTP release and runtime packages.
+It does not include the website, development dependencies, or native installer
+toolchain. Use a new version tag for every distinct build and record its image ID.
 
-1. **Builder stage** (`elixir:1.17.3-alpine`):
-   - Installs `nodejs npm build-base git python3 openssl-dev`
-   - `mix deps.get --only prod` → fetches Elixir deps from `mix.lock`
-   - Applies `openid_connect` patch: replaces `JSON.decode` → `Jason.decode`
-   - `mix deps.compile`
-   - `npm ci && npm run deploy` inside `apps/fz_http/assets`
-   - `mix phx.digest` (digest + compress static assets)
-   - `mix compile`
-   - `mix release` → produces OTP release in `_build/prod/rel/firezone/`
-2. **Runner stage** (`elixir:1.17.3-alpine`):
-   - Installs `nftables openssl openssl-dev`
-   - Copies only the compiled release from the builder
-   - Entrypoint: `/app/bin/server`
+## Existing-installation upgrade
 
----
+Preserve the installed Compose project name, private environment, salts, database
+encryption key, WireGuard keys, application bind mount, database volume, network,
+ports, and reverse-proxy configuration. Do not use the example environment as an
+upgrade or reset the administrator password.
 
-## Deploy / Run the Stack
+1. Record the old image ID, project name, mounts, schema versions, user/device
+   counts, and working VPN state. Keep the old image locally for rollback.
+2. Create and verify a native custom-format PostgreSQL dump. Restore it into an
+   isolated database and rehearse the new image's migrations and record reads.
+3. Stop only Firezone for the final recovery point. Create another database dump
+   and copy its matching private inputs and application files into a restricted
+   backup directory. Keep PostgreSQL running.
+4. Update only the Firezone image reference. Render Compose quietly, then run
+   `docker compose up -d --no-deps --pull never --force-recreate firezone`.
+   The server entrypoint runs pending application migrations before starting.
+5. Verify management login, existing users/devices/settings, the WireGuard
+   interface and peers, nftables, client handshake, forwarding, DNS, and intended
+   private-resource access. Restart the updated Firezone service and recheck.
 
-```bash
-# First-time or after a schema change: migrate the database
-docker compose run --rm firezone bin/migrate
+An HTTP login page alone does not verify VPN forwarding or client DNS. Retain the
+backup and prior image until application and VPN checks pass.
 
-# Create or reset the admin user (reads DEFAULT_ADMIN_EMAIL / DEFAULT_ADMIN_PASSWORD from .env)
-docker compose run --rm firezone bin/create-or-reset-admin
+For rollback with an unchanged schema and unchanged application state, restore
+the recorded Compose/image reference and recreate Firezone. If a migration or
+write changed compatibility, stop Firezone and restore the matched database dump,
+application files, and private inputs before starting the previous image. Never
+start an older image against a migrated volume as a rollback experiment.
 
-# Start everything in the background
-docker compose up -d
+### PostgreSQL major versions
 
-# Tail logs
-docker compose logs -f firezone
+The standalone example Compose files now target PostgreSQL 18.6 for a fresh
+installation and mount `/var/lib/postgresql`, which is the official image's
+parent data directory for PostgreSQL 18 and later.
 
-# Stop without removing volumes
-docker compose down
+An existing PostgreSQL 15/16 installation must keep its current database image,
+volume, and mount during the application-only update. A database major upgrade
+is separate: verify a logical dump, restore into a new empty PostgreSQL 18
+directory/volume, test it with Firezone, and retain the old database recovery set.
+Never point PostgreSQL 18 at an existing 15/16 data directory. See the
+[official image storage notes](https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata).
 
-# Full teardown including volumes (destroys DB data)
-docker compose down -v
-```
+## Development validation
 
-The web UI is exposed at **http://localhost:13000** (bound to 127.0.0.1).
+```sh
+mix deps.get
+MIX_ENV=test mix compile --force --warnings-as-errors
+mix format --check-formatted
+mix credo --strict
+mix test
 
----
-
-## Update Elixir / Mix Dependencies
-
-All Elixir deps live in `mix.lock` (root) and are declared in each app's `mix.exs`.
-
-```bash
-# Update a single package
-mix deps.update <package_name>
-
-# Update all packages
-mix deps.update --all
-
-# Update only security-sensitive transitive deps without touching everything
-mix deps.update <dep1> <dep2>
-
-# Check what is outdated
-mix hex.outdated
-
-# After updating, recompile
-mix deps.compile
-
-# Rebuild the Docker image to bake in the new lock file
-docker build -f Dockerfile.prod -t firezone:latest .
-```
-
-> **Tip:** After any `mix deps.update`, commit both `mix.lock` and any changed `mix.exs` files together.
-
----
-
-## Update Ruby Gems (omnibus)
-
-The omnibus package builder lives in `omnibus/`. Its dependencies are managed by Bundler.
-
-**Files to know:**
-- `omnibus/Gemfile` — direct deps + minimum version pins for security patches
-- `omnibus/Gemfile.lock` — full resolved lockfile (commit this)
-
-```bash
-cd omnibus
-
-# Update specific vulnerable gems
-bundle update concurrent-ruby faraday
-
-# Update everything (risky — omnibus/chef tooling is version-sensitive)
-bundle update
-
-# After updating, verify the resolved versions
-grep -E "concurrent-ruby|faraday|rack" Gemfile.lock
-```
-
-### Security pin pattern
-
-When a transitive dep has a CVE but we can't change the parent gem, add a
-minimum-version pin in `Gemfile`:
-
-```ruby
-# Security patches for transitive dependencies
-gem 'rack', '>= 2.2.22'
-gem 'faraday', '>= 2.12.2'
-gem 'concurrent-ruby', '>= 1.3.5'
-```
-
-Then run `bundle update <gem>` to regenerate the lockfile.
-
-### Version reference (last updated 2026-06-24)
-
-| Gem | Pinned to | Reason |
-|---|---|---|
-| `rack` | `>= 2.2.22` | CVE multipart parsing |
-| `faraday` | `>= 2.12.2` | NestedParamsEncoder DoS |
-| `concurrent-ruby` | `>= 1.3.5` | AtomicReference NaN livelock + RWLock bugs |
-| `rubyzip` | `>= 2.4.1, < 3.0` | Path traversal (chef requires `< 3.0`) |
-
----
-
-## Update npm Packages (website)
-
-The marketing/docs website lives in `website/` and is a Next.js app.
-
-```bash
-cd website
-
-# Check for vulnerabilities
+cd apps/fz_http/assets
+npm ci
+npm run deploy
 npm audit
 
-# Update a specific package
-npm install <package>@<version>
-
-# Update all non-breaking
-npm update
-
-# Check what is outdated
-npm outdated
+cd ../../../website
+npm ci
+npm run lint
+npm run build
+npm audit
 ```
 
-### Override pattern for transitive deps
+Tests need PostgreSQL; `POSTGRES_HOST` and `POSTGRES_PASSWORD` override the
+localhost/postgres test defaults. Browser acceptance tests additionally need
+Chromium/ChromeDriver, the pinned SAML fixture on localhost:8400, and Vault
+2.2.0 on localhost:8200 with the synthetic dev root token `firezone`.
+Run `mix test apps/fz_http/test/fz_http_web/acceptance --only acceptance`.
+Never expose the identity-provider fixtures or their synthetic credentials.
 
-When a transitive dep has a CVE, use the `overrides` field in `website/package.json`:
-
-```json
-"overrides": {
-  "vulnerable-package": "^x.y.z"
-}
-```
-
-Then run `npm install` to regenerate `package-lock.json`.
-
-### Version reference (last updated 2026-10-08)
-
-| Package | Version | Notes |
-|---|---|---|
-| `postcss` | `^8.5.28` | Incomplete fix of GHSA-6g55-p6wh-862q — arbitrary `.map` file read via `sourceMappingURL` when `from` is unset (GHSA-fxqj-rqcc-2cmp) |
-| `sharp` | `^0.35.4` (override) | Bundled libheif RCE/heap issues (GHSA-g89c-p67h-r497, GHSA-2jg2-4ch7-h545) |
-| `dompurify` | `^3.4.16` (override) | ALLOWED_ATTR pollution via `setConfig()`; IN_PLACE afterSanitize hook DOM XSS |
-| `next` | `^15.5.27` | Cache poisoning in SSG/ISR (fixed in 15.5.27) |
-| `postcss-selector-parser` | `^7.1.6` (override) | Quadratic complexity CPU exhaustion |
-| `seroval` / `sharp` / `source-map-js` | `1.6.8` / `0.35.5` / `1.2.2` | Via `npm audit fix` (lockfile only) |
-
-> **Known limitation (braces):** `braces <= 3.0.3` (GHSA-vfj7-8cjw-p6xm, stack-exhaustion DoS)
-> has no patched release. It is only used by build tooling (`micromatch`, `chokidar`,
-> `next-sitemap`). Dismiss the alert as "no fix / not exploitable" or wait for upstream.
-> Likewise `phoenix` in `apps/fz_http/assets` (GHSA-63mc-hw7g-86rr) has no fix available.
-
-> **Known limitation:** `next@15.x` bundles its own `postcss@8.4.31` internally
-> (used for its CSS compiler, not user code). npm audit flags this as
-> "No fix available" on the 15.x branch — the fix only lands in `next@16.3.0+`.
-> The top-level `postcss` (8.5.15) used by Tailwind/your pipeline is patched.
-> Monitor <https://github.com/advisories/GHSA-qx2v-qp2m-jg93> for a 15.x backport.
-
----
-
-## Update Frontend Assets (fz_http)
-
-The Phoenix LiveView frontend assets live in `apps/fz_http/assets/`.
-
-```bash
-cd apps/fz_http/assets
-
-# Install / update packages
-npm install
-
-# Build for production (also called by mix phx.digest in Dockerfile)
-npm run deploy
-
-# Dev watch mode (use with mix phx.server for local dev)
-npm run watch
-```
-
----
-
-## Responding to Dependabot / Security Alerts
-
-### Triage order
-
-1. **Critical / High** in direct deps → update immediately, rebuild image
-2. **High** in transitive deps → add a minimum-version pin, run `bundle update` or `npm install`
-3. **Moderate** in transitive deps → add override/pin; note if "No fix available"
-4. **Low** → batch-fix in the next maintenance window
-
-### Checklist
-
-```
-[ ] Identify the affected file: omnibus/Gemfile.lock, website/package-lock.json, mix.lock
-[ ] Check latest patched version on RubyGems / npm / Hex
-[ ] Add pin / override in the manifest (Gemfile, package.json, mix.exs)
-[ ] Run: bundle update <gem>  OR  npm install  OR  mix deps.update <dep>
-[ ] Verify new version in lock file
-[ ] Rebuild Docker image: docker build -f Dockerfile.prod -t firezone:latest .
-[ ] Run migrations if needed: docker compose run --rm firezone bin/migrate
-[ ] Smoke test: docker compose up -d && curl -s -o /dev/null -w "%{http_code}" http://localhost:13000/
-[ ] Commit: Gemfile + Gemfile.lock, package.json + package-lock.json, mix.lock
-[ ] Push and confirm Dependabot alerts are resolved
-```
-
-### Useful commands
-
-```bash
-# Check installed Ruby gem version
-grep "<gemname>" omnibus/Gemfile.lock
-
-# Check latest gem version on RubyGems
-gem search <gemname> --exact
-
-# Check installed npm version
-node -e "const d=require('./website/node_modules/<pkg>/package.json'); console.log(d.version)"
-
-# Check latest npm version
-npm show <package> version
-
-# Full npm vulnerability report
-cd website && npm audit
-
-# Check Elixir dep version
-grep "<dep>" mix.lock
-mix hex.info <dep>
-```
-
----
-
-## Known Quirks & Gotchas
-
-- **`openid_connect` patch** — `Dockerfile.prod` patches `JSON.decode` → `Jason.decode`
-  at build time via `sed`. If `openid_connect` is updated, verify the patch still applies
-  correctly (or that the upstream has fixed the `JSON` module reference).
-
-- **`wireguardex` / WireGuard native deps** — The `fz_vpn` and `fz_wall` umbrella apps
-  depend on `wireguardex` (Rust NIF). For web-UI-only work, run from `apps/fz_http`
-  directly (`mix phx.server`) to avoid NIF download failures.
-
-- **Bundler version mismatch** — `omnibus/Gemfile.lock` was generated with Bundler 2.3.14
-  but the system may have 2.6.x. Bundler is backwards-compatible for the lock format;
-  running `bundle update` will update the `BUNDLED WITH` footer automatically.
-
-- **`next@15.x` internal postcss** — Documented above; cannot be overridden via npm
-  `overrides` because it is bundled inside the next package itself, not a hoisted dep.
-
-- **Version env var** — The Docker image reads `VERSION` from a build arg
-  (`--build-arg VERSION=x.y.z`). Locally it defaults to `0.0.0+git.0.deadbeef`.
-  The `docker-compose.yml` image tag is `firezone:latest`; set the `VERSION` label
-  consistently when tagging release images.
+Update manifests and lockfiles together. Review upstream change logs before
+raising major versions:
+[Phoenix](https://github.com/phoenixframework/phoenix/blob/v1.8.15/CHANGELOG.md),
+[LiveView](https://phoenix-live-view.hexdocs.pm/changelog.html),
+[Phoenix HTML](https://hexdocs.pm/phoenix_html/changelog.html),
+[Gettext](https://hexdocs.pm/gettext/changelog.html), and
+[Next](https://nextjs.org/docs/app/guides/upgrading/version-16).

@@ -38,7 +38,7 @@ defmodule FzHttpWeb.MFALive.Auth do
   @impl Phoenix.LiveView
   def render(%{live_action: :auth} = assigns) do
     ~H"""
-    <h3 class="is-3 title"><%= @page_title %></h3>
+    <h3 class="is-3 title">{@page_title}</h3>
 
     <p>
       Authenticate with your configured MFA method.
@@ -55,16 +55,16 @@ defmodule FzHttpWeb.MFALive.Auth do
     <div class="block">
       <.form :let={f} for={@changeset} id="mfa-method-form" phx-submit="verify">
         <div class="field">
-          <%= label(f, :code, class: "label") %>
+          {label(f, :code, class: "label")}
           <div class="control">
-            <%= text_input(f, :code,
+            {text_input(f, :code,
               name: "code",
               placeholder: "123456",
               required: true,
               class: "input #{input_error_class(@changeset, :code)}"
-            ) %>
+            )}
             <p class="help is-danger">
-              <%= error_tag(f, :code) %>
+              {error_tag(f, :code)}
             </p>
           </div>
         </div>
@@ -73,10 +73,10 @@ defmodule FzHttpWeb.MFALive.Auth do
           <div class="control">
             <div class="level">
               <div class="level-left">
-                <%= submit("Verify",
+                {submit("Verify",
                   phx_disable_with: "verifying...",
                   class: "button"
-                ) %>
+                )}
               </div>
               <div class="level-right">
                 <%= link(to: ~p"/sign_out", method: :delete) do %>
@@ -94,7 +94,7 @@ defmodule FzHttpWeb.MFALive.Auth do
   @impl Phoenix.LiveView
   def render(%{live_action: :types} = assigns) do
     ~H"""
-    <h3 class="is-3 title"><%= @page_title %></h3>
+    <h3 class="is-3 title">{@page_title}</h3>
 
     <p class="block">
       Select your MFA method:
@@ -105,7 +105,7 @@ defmodule FzHttpWeb.MFALive.Auth do
         <%= for method <- @methods do %>
           <li>
             <.link navigate={~p"/mfa/auth/#{method.id}"}>
-              <%= "[#{method.type}] #{method.name} ->" %>
+              {"[#{method.type}] #{method.name} ->"}
             </.link>
           </li>
         <% end %>
@@ -119,7 +119,7 @@ defmodule FzHttpWeb.MFALive.Auth do
     case MFA.use_method(socket.assigns.method, attrs) do
       {:ok, _method} ->
         root_path_for_user = root_path_for_user(socket.assigns.current_user)
-        socket = push_redirect(socket, to: root_path_for_user)
+        socket = push_navigate(socket, to: root_path_for_user)
         {:noreply, socket}
 
       {:error, changeset} ->

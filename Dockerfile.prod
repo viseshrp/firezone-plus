@@ -1,9 +1,9 @@
-ARG ELIXIR_VERSION=1.17.3
+ARG ELIXIR_VERSION=1.20.4-otp-29
 
 ARG BUILDER_IMAGE="elixir:${ELIXIR_VERSION}-alpine"
 ARG RUNNER_IMAGE="elixir:${ELIXIR_VERSION}-alpine"
 
-FROM ${BUILDER_IMAGE} as builder
+FROM ${BUILDER_IMAGE} AS builder
 
 # install build dependencies
 RUN apk add nodejs npm build-base git python3 openssl-dev
@@ -25,10 +25,6 @@ COPY apps/fz_vpn/mix.exs ./apps/fz_vpn/mix.exs
 COPY apps/fz_wall/mix.exs ./apps/fz_wall/mix.exs
 
 RUN mix deps.get --only $MIX_ENV
-
-# Patch openid_connect to use Jason instead of undefined JSON module
-RUN sed -i 's/JSON\.decode/Jason.decode/g' /app/deps/openid_connect/lib/openid_connect/document.ex && \
-    sed -i 's/JSON\.decode/Jason.decode/g' /app/deps/openid_connect/lib/openid_connect.ex
 
 RUN mkdir config
 
@@ -64,6 +60,12 @@ RUN mix release
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE}
+
+ARG VERSION=0.0.0-docker
+ARG VCS_REF=unknown
+LABEL org.opencontainers.image.source="https://github.com/viseshrp/firezone-plus" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}"
 
 # Install runtime dependencies
 RUN apk add -u --no-cache \

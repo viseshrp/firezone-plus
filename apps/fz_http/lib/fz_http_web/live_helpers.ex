@@ -7,6 +7,11 @@ defmodule FzHttpWeb.LiveHelpers do
   use Phoenix.Component
   alias FzHttp.{Config, Users}
 
+  # Keep existing templates working with LiveView's function component API.
+  def live_component(module, opts) do
+    opts |> Map.new() |> Map.put(:module, module) |> Phoenix.Component.live_component()
+  end
+
   def live_modal(component, opts) do
     path = Keyword.fetch!(opts, :return_to)
 

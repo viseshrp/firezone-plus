@@ -13,7 +13,6 @@ defmodule FzHttp.DataCase do
   by setting `use FzHttp.DataCase, async: true`, although
   this option is not recommended for other databases.
   """
-  use ExUnit.CaseTemplate
   use FzHttp.CaseTemplate
 
   using do

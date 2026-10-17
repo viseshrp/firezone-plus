@@ -1,5 +1,6 @@
 defmodule FzHttpWeb.AcceptanceCase do
   use ExUnit.CaseTemplate
+  require Logger
   alias Wallaby.Query
   import Wallaby.Browser
 
@@ -58,11 +59,7 @@ defmodule FzHttpWeb.AcceptanceCase do
 
   defp start_session(headless?, metadata) do
     capabilities =
-      [
-        metadata: metadata,
-        window_size: [width: 1280, height: 720]
-      ]
-      |> Wallaby.Chrome.default_capabilities()
+      Wallaby.Chrome.default_capabilities()
       |> update_in(
         [:chromeOptions, :args],
         fn args ->
@@ -77,7 +74,11 @@ defmodule FzHttpWeb.AcceptanceCase do
         end
       )
 
-    Wallaby.start_session(capabilities: capabilities)
+    Wallaby.start_session(
+      capabilities: capabilities,
+      metadata: metadata,
+      window_size: [width: 1280, height: 720]
+    )
   end
 
   def take_screenshot(name) do
@@ -88,7 +89,14 @@ defmodule FzHttpWeb.AcceptanceCase do
     |> Enum.with_index(1)
     |> Enum.flat_map(fn {s, i} ->
       filename = time <> "_" <> name <> "(#{i})"
-      take_screenshot(s, name: filename, log: true).screenshots
+
+      try do
+        take_screenshot(s, name: filename, log: true).screenshots
+      rescue
+        error ->
+          Logger.warning("Browser failure screenshot unavailable: #{inspect(error.__struct__)}")
+          []
+      end
     end)
   end
 

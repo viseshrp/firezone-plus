@@ -94,9 +94,10 @@ defmodule FzHttpWeb.Acceptance.AuthenticationTest do
         |> assert_el(Query.text("Please check your inbox for the magic link."))
         |> visit(~p"/dev/mailbox")
         |> click(Query.link("Firezone Magic Link"))
-        |> assert_el(Query.text("HTML body preview:"))
+        |> assert_el(Query.text("HTML body"))
+        |> click(Query.css("#text-body-toggle"))
 
-      email_text = text(session, Query.css(".body-text"))
+      email_text = text(session, Query.css("#text-body-content"))
       [link] = Regex.run(~r|http://localhost[^ ]*|, email_text)
 
       session
@@ -300,7 +301,7 @@ defmodule FzHttpWeb.Acceptance.AuthenticationTest do
 
       session
       |> password_login_flow(user.email, password)
-      |> mfa_login_flow(verification_code)
+      |> mfa_login_flow(secret)
       |> assert_el(Query.text("Your Devices"))
       |> assert_path("/user_devices")
       |> Auth.assert_authenticated(user)
@@ -328,7 +329,7 @@ defmodule FzHttpWeb.Acceptance.AuthenticationTest do
 
       session
       |> password_login_flow(user.email, password)
-      |> mfa_login_flow(verification_code)
+      |> mfa_login_flow(secret)
       |> assert_el(Query.css(".is-user-name"))
       |> assert_path("/users")
       |> Auth.assert_authenticated(user)
@@ -439,13 +440,13 @@ defmodule FzHttpWeb.Acceptance.AuthenticationTest do
     |> click(Query.button("Sign In"))
   end
 
-  defp mfa_login_flow(session, verification_code) do
+  defp mfa_login_flow(session, secret) do
     session
     |> assert_el(Query.text("Multi-factor Authentication"))
     |> fill_form(%{"code" => "111111"})
     |> click(Query.button("Verify"))
     |> assert_el(Query.text("is invalid"))
-    |> fill_form(%{"code" => verification_code})
+    |> fill_form(%{"code" => fresh_totp_code(secret)})
     |> click(Query.button("Verify"))
   end
 
@@ -482,6 +483,13 @@ defmodule FzHttpWeb.Acceptance.AuthenticationTest do
     assert mfa_method.payload["secret"] == Base.encode64(secret)
 
     session
+  end
+
+  defp fresh_totp_code(secret) do
+    # Leave time for the browser round trip instead of crossing a TOTP boundary.
+    seconds_remaining = 30 - rem(System.os_time(:second), 30)
+    if seconds_remaining < 10, do: Process.sleep(seconds_remaining * 1_000 + 50)
+    NimbleTOTP.verification_code(secret)
   end
 
   defp remove_mfa_flow(session) do

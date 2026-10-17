@@ -50,9 +50,6 @@ defmodule FzHttpWeb.SettingLive.Unprivileged.Account do
       {:error, :not_found} ->
         {:ok, methods} = MFA.list_methods_for_user(socket.assigns.current_user)
         {:noreply, assign(socket, :methods, methods)}
-
-      false ->
-        {:noreply, socket}
     end
   end
 

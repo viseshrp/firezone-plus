@@ -20,20 +20,18 @@
       <tr>
         <td>
           <.link navigate={~p"/devices/#{device}"}>
-            <%= device.name %>
+            {device.name}
           </.link>
         </td>
         <%= if @show_user do %>
           <td>
-            <%= live_redirect(device.user.email,
-              to: ~p"/users/#{device.user}"
-            ) %>
+            <.link navigate={~p"/users/#{device.user}"}>{device.user.email}</.link>
           </td>
         <% end %>
-        <td class="code"><%= device.ipv4 %></td>
-        <td class="code"><%= device.ipv6 %></td>
+        <td class="code">{device.ipv4}</td>
+        <td class="code">{device.ipv6}</td>
         <td class="code">
-          <%= device.remote_ip %>
+          {device.remote_ip}
         </td>
         <td
           id={"device-#{device.id}-latest-handshake"}
@@ -43,10 +41,10 @@
           …
         </td>
         <td class="code">
-          <%= to_human_bytes(device.rx_bytes) %> received <br />
-          <%= to_human_bytes(device.tx_bytes) %> sent
+          {to_human_bytes(device.rx_bytes)} received <br />
+          {to_human_bytes(device.tx_bytes)} sent
         </td>
-        <td class="code"><%= device.public_key %></td>
+        <td class="code">{device.public_key}</td>
         <td
           id={"device-#{device.id}-inserted-at"}
           data-timestamp={device.inserted_at}

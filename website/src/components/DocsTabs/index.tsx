@@ -1,10 +1,10 @@
 "use client";
-import { Tabs as FlowbiteTabs } from "flowbite-react";
+import { Tabs as FlowbiteTabs, TabItem } from "flowbite-react";
 
 function TabsGroup({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-4">
-      <FlowbiteTabs.Group className="shadow">{children}</FlowbiteTabs.Group>
+      <FlowbiteTabs className="shadow">{children}</FlowbiteTabs>
     </div>
   );
 }
@@ -18,9 +18,9 @@ function TabsItem({
   title: string;
 }) {
   return (
-    <FlowbiteTabs.Item title={title} {...props}>
+    <TabItem title={title} {...props}>
       {children}
-    </FlowbiteTabs.Item>
+    </TabItem>
   );
 }
 

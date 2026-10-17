@@ -54,7 +54,7 @@ defmodule FzHttpWeb.RuleLive.IndexTest do
 
       test_view =
         view
-        |> element("a[phx-value-rule_id=#{rule.id}]")
+        |> element("a[phx-value-rule_id='#{rule.id}']")
         |> render_click()
 
       refute test_view =~ "#{rule.destination}"
@@ -102,7 +102,7 @@ defmodule FzHttpWeb.RuleLive.IndexTest do
 
       test_view =
         view
-        |> element("a[phx-value-rule_id=#{rule.id}]")
+        |> element("a[phx-value-rule_id='#{rule.id}']")
         |> render_click()
 
       refute test_view =~ "#{rule.destination}"
@@ -171,7 +171,7 @@ defmodule FzHttpWeb.RuleLive.IndexTest do
       path = ~p"/rules"
       {:ok, view, _html} = live(conn, path)
 
-      view |> element("a[phx-value-rule_id=#{rule.id}]") |> render_click()
+      view |> element("a[phx-value-rule_id='#{rule.id}']") |> render_click()
 
       accept_table =
         view
@@ -189,7 +189,7 @@ defmodule FzHttpWeb.RuleLive.IndexTest do
       path = ~p"/rules"
       {:ok, view, _html} = live(conn, path)
 
-      view |> element("a[phx-value-rule_id=#{rule.id}]") |> render_click()
+      view |> element("a[phx-value-rule_id='#{rule.id}']") |> render_click()
 
       drop_table =
         view

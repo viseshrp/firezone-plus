@@ -11,4 +11,14 @@ defmodule FzHttpWeb.ErrorViewTest do
   test "renders 500.html" do
     assert render_to_string(FzHttpWeb.ErrorView, "500.html", []) == "Internal Server Error"
   end
+
+  test "renders exception reasons without leaking internal details" do
+    assigns = [reason: RuntimeError.exception("private database detail")]
+
+    assert render_to_string(FzHttpWeb.ErrorView, "500.html", assigns) == "Internal Server Error"
+
+    assert FzHttpWeb.ErrorView.render("500.json", assigns) == %{
+             "error" => "Internal Server Error"
+           }
+  end
 end

@@ -34,7 +34,7 @@ defmodule FzHttpWeb.UserLive.FormComponent do
          socket
          |> assign(:user, user)
          |> put_flash(:info, "User created successfully.")
-         |> push_redirect(to: ~p"/users/#{user}")}
+         |> push_navigate(to: ~p"/users/#{user}")}
 
       {:error, changeset} ->
         {:noreply,
@@ -53,7 +53,7 @@ defmodule FzHttpWeb.UserLive.FormComponent do
          socket
          |> assign(:user, user)
          |> put_flash(:info, "User updated successfully.")
-         |> push_redirect(to: socket.assigns.return_to)}
+         |> push_navigate(to: socket.assigns.return_to)}
 
       {:error, changeset} ->
         {:noreply, assign(socket, :changeset, changeset)}

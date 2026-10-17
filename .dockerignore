@@ -2,6 +2,16 @@ apps/fz_http/assets/node_modules
 apps/fz_http/priv/static/dist
 apps/fz_http/priv/cert
 _build
+deps
+website/node_modules
+website/.next
+website/out
+vendor
+omnibus/vendor
+.env
+.env.*
+apps/fz_http/priv/wg_dev_private_key
+apps/fz_http/priv/static/uploads
 **/cover
 docs
 .DS_Store

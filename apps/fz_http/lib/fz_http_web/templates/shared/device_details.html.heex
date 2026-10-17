@@ -4,38 +4,38 @@
       <tr>
         <td><strong>User</strong></td>
         <td>
-          <%= live_redirect(@user.email, to: ~p"/users/#{@user}") %>
+          <.link navigate={~p"/users/#{@user}"}>{@user.email}</.link>
         </td>
       </tr>
     <% end %>
 
     <tr>
       <td><strong>Name</strong></td>
-      <td><%= @device.name %></td>
+      <td>{@device.name}</td>
     </tr>
 
     <tr>
       <td><strong>Description</strong></td>
-      <td><%= @device.description %></td>
+      <td>{@device.description}</td>
     </tr>
 
     <%= if FzHttp.Config.fetch_env!(:fz_http, :wireguard_ipv4_enabled) do %>
       <tr>
         <td><strong>Tunnel IPv4</strong></td>
-        <td><%= @device.ipv4 %></td>
+        <td>{@device.ipv4}</td>
       </tr>
     <% end %>
 
     <%= if FzHttp.Config.fetch_env!(:fz_http, :wireguard_ipv6_enabled) do %>
       <tr>
         <td><strong>Tunnel IPv6</strong></td>
-        <td><%= @device.ipv6 %></td>
+        <td>{@device.ipv6}</td>
       </tr>
     <% end %>
 
     <tr>
       <td><strong>Remote IP</strong></td>
-      <td><%= @device.remote_ip %></td>
+      <td>{@device.remote_ip}</td>
     </tr>
 
     <tr>
@@ -51,27 +51,27 @@
 
     <tr>
       <td><strong>Received</strong></td>
-      <td><%= to_human_bytes(@device.rx_bytes) %></td>
+      <td>{to_human_bytes(@device.rx_bytes)}</td>
     </tr>
 
     <tr>
       <td><strong>Sent</strong></td>
-      <td><%= to_human_bytes(@device.tx_bytes) %></td>
+      <td>{to_human_bytes(@device.tx_bytes)}</td>
     </tr>
 
     <tr>
       <td><strong>Allowed IPs</strong></td>
-      <td><%= list_to_string(@allowed_ips) || "None" %></td>
+      <td>{list_to_string(@allowed_ips) || "None"}</td>
     </tr>
 
     <tr>
       <td><strong>DNS Servers</strong></td>
-      <td><%= list_to_string(@dns) || "None" %></td>
+      <td>{list_to_string(@dns) || "None"}</td>
     </tr>
 
     <tr>
       <td><strong>Endpoint</strong></td>
-      <td><%= @endpoint %></td>
+      <td>{@endpoint}</td>
     </tr>
 
     <tr>
@@ -80,24 +80,24 @@
         <%= if @persistent_keepalive == 0 do %>
           Disabled
         <% else %>
-          Every <%= @persistent_keepalive %> seconds
+          Every {@persistent_keepalive} seconds
         <% end %>
       </td>
     </tr>
 
     <tr>
       <td><strong>MTU</strong></td>
-      <td><%= @mtu %></td>
+      <td>{@mtu}</td>
     </tr>
 
     <tr>
       <td><strong>Public key</strong></td>
-      <td class="code"><%= @device.public_key %></td>
+      <td class="code">{@device.public_key}</td>
     </tr>
 
     <tr>
       <td><strong>Preshared Key</strong></td>
-      <td class="code"><%= @device.preshared_key %></td>
+      <td class="code">{@device.preshared_key}</td>
     </tr>
   </tbody>
 </table>

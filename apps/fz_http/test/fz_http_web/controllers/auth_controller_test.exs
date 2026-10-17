@@ -26,6 +26,36 @@ defmodule FzHttpWeb.AuthControllerTest do
   describe "new" do
     setup [:create_user]
 
+    test "OIDC token exchange sends one grant type and preserves PKCE", %{
+      unauthed_conn: conn,
+      bypass: bypass
+    } do
+      Bypass.expect_once(bypass, "POST", "/oauth/token", fn request ->
+        {:ok, body, request} = Plug.Conn.read_body(request)
+        fields = URI.query_decoder(body) |> Enum.to_list()
+        assert Enum.count(fields, fn {key, _} -> key == "grant_type" end) == 1
+        params = Map.new(fields)
+        assert params["grant_type"] == "authorization_code"
+        assert params["code"] == "test-authorization-code"
+        assert is_binary(params["code_verifier"])
+        assert byte_size(params["code_verifier"]) >= 43
+        Plug.Conn.resp(request, 400, ~s({"error":"invalid_grant"}))
+      end)
+
+      conn = get(conn, ~p"/auth/oidc/google")
+      state = redirected_to(conn) |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()
+
+      conn =
+        conn
+        |> recycle()
+        |> get(~p"/auth/oidc/google/callback", %{
+          "state" => state["state"],
+          "code" => "test-authorization-code"
+        })
+
+      assert redirected_to(conn) == ~p"/"
+    end
+
     test "unauthed: loads the sign in form", %{unauthed_conn: conn} do
       test_conn = get(conn, ~p"/")
 

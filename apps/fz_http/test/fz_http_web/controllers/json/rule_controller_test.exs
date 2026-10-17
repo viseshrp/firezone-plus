@@ -1,5 +1,5 @@
 defmodule FzHttpWeb.JSON.RuleControllerTest do
-  use FzHttpWeb.ApiCase, async: true
+  use FzHttpWeb.ApiCase, async: false
   alias FzHttp.RulesFixtures
   import FzHttpWeb.ApiCase
 

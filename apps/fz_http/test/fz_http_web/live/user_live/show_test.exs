@@ -365,10 +365,10 @@ defmodule FzHttpWeb.UserLive.ShowTest do
         |> form("#create-device")
         |> render_change(@default_allowed_ips_change)
 
-      assert test_view =~ """
-             <textarea class="textarea " id="create-device_allowed_ips" name="device[allowed_ips]">
-             </textarea>\
-             """
+      assert test_view
+             |> Floki.parse_document!()
+             |> Floki.find("#create-device_allowed_ips")
+             |> Floki.text() == ""
     end
 
     test "on use_default_dns change", %{admin_conn: conn, admin_user: user} do

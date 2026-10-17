@@ -1,4 +1,5 @@
 [
+  migrate_eex_to_curly_interpolation: false,
   locals_without_parens: [
     assert_authenticated: 2,
     assert_unauthenticated: 1

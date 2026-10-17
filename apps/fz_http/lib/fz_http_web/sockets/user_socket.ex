@@ -38,8 +38,8 @@ defmodule FzHttpWeb.UserSocket do
   defp parse_ip(connect_info) do
     case get_ip_address(connect_info) do
       ip when ip in ["", nil] ->
-        Logger.warn(@blank_ip_warning)
-        Logger.warn(connect_info)
+        Logger.warning(@blank_ip_warning)
+        Logger.warning(connect_info)
         :x_forward_for_header_issue
 
       ip when is_tuple(ip) ->

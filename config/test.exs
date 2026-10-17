@@ -12,6 +12,8 @@ partition_suffix =
 config :fz_http, sql_sandbox: true
 
 config :fz_http, FzHttp.Repo,
+  hostname: System.get_env("POSTGRES_HOST", "localhost"),
+  password: System.get_env("POSTGRES_PASSWORD", "postgres"),
   database: "firezone_test#{partition_suffix}",
   pool: Ecto.Adapters.SQL.Sandbox,
   queue_target: 1000
@@ -21,6 +23,8 @@ config :fz_http, FzHttpWeb.Endpoint,
   server: true
 
 config :fz_http, FzHttp.Telemetry, enabled: false
+
+config :posthog, enable: false
 
 config :fz_http, FzHttp.ConnectivityChecks, enabled: false
 
@@ -38,7 +42,7 @@ config :fz_vpn,
 ###############################
 config :fz_http, FzHttpWeb.Mailer, adapter: FzHttpWeb.MailerTestAdapter
 
-config :logger, level: :warn
+config :logger, level: :warning
 
 config :argon2_elixir, t_cost: 1, m_cost: 8
 

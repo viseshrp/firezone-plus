@@ -14,7 +14,7 @@ defmodule FzHttpWeb.OIDCLive.ConnectionsTableComponent do
     {:noreply,
      socket
      |> put_flash(:info, "A refresh is underway, please check back in a minute.")
-     |> push_redirect(to: ~p"/users/#{socket.assigns.user}")}
+     |> push_navigate(to: ~p"/users/#{socket.assigns.user}")}
   end
 
   def handle_event("delete", %{"id" => id}, socket) do
@@ -24,7 +24,7 @@ defmodule FzHttpWeb.OIDCLive.ConnectionsTableComponent do
     {:noreply,
      socket
      |> put_flash(:info, "The #{conn.provider} connection is deleted.")
-     |> push_redirect(to: ~p"/users/#{socket.assigns.user}")}
+     |> push_navigate(to: ~p"/users/#{socket.assigns.user}")}
   end
 
   defp delete_warning(conn) do

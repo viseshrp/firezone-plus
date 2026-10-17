@@ -7,7 +7,7 @@ export default function SearchForm() {
       <DocSearch
         appId="XXPZ9QVGFB"
         apiKey="66664e8765e1645ea0b500acebb0b0c2"
-        indexName="firezone"
+        indices={["firezone"]}
       />
     </div>
   );

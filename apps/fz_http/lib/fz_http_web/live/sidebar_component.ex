@@ -16,58 +16,67 @@ defmodule FzHttpWeb.SidebarComponent do
         <p class="menu-label">Configuration</p>
         <ul class="menu-list">
           <li>
-            <%= live_redirect(to: ~p"/users", class: nav_class(@path, "/users")) do %>
+            <.link navigate={~p"/users"} class={nav_class(@path, "/users")}>
               <span class="icon"><i class="mdi mdi-account-group"></i></span>
               <span class="menu-item-label">Users</span>
-            <% end %>
+            </.link>
           </li>
           <li>
-            <%= live_redirect(to: ~p"/devices", class: nav_class(@path, "/devices")) do %>
+            <.link navigate={~p"/devices"} class={nav_class(@path, "/devices")}>
               <span class="icon"><i class="mdi mdi-laptop"></i></span>
               <span class="menu-item-label">Devices</span>
-            <% end %>
+            </.link>
           </li>
           <li>
-            <%= live_redirect(to: ~p"/rules", class: nav_class(@path, "/rules")) do %>
+            <.link navigate={~p"/rules"} class={nav_class(@path, "/rules")}>
               <span class="icon"><i class="mdi mdi-traffic-light"></i></span>
               <span class="menu-item-label">Rules</span>
-            <% end %>
+            </.link>
           </li>
         </ul>
         <p class="menu-label">Settings</p>
         <ul class="menu-list">
           <li>
-            <%= live_redirect(to: ~p"/settings/client_defaults", class: nav_class(@path, "/settings/client_defaults")) do %>
+            <.link
+              navigate={~p"/settings/client_defaults"}
+              class={nav_class(@path, "/settings/client_defaults")}
+            >
               <span class="icon"><i class="mdi mdi-cog"></i></span>
               <span class="menu-item-label">Defaults</span>
-            <% end %>
+            </.link>
           </li>
           <li>
-            <%= live_redirect(to: ~p"/settings/account", class: nav_class(@path, "/settings/account")) do %>
+            <.link navigate={~p"/settings/account"} class={nav_class(@path, "/settings/account")}>
               <span class="icon"><i class="mdi mdi-account"></i></span>
               <span class="menu-item-label">Account</span>
-            <% end %>
+            </.link>
           </li>
           <li>
-            <%= live_redirect(to: ~p"/settings/customization", class: nav_class(@path, "/settings/customization")) do %>
+            <.link
+              navigate={~p"/settings/customization"}
+              class={nav_class(@path, "/settings/customization")}
+            >
               <span class="icon"><i class="mdi mdi-palette"></i></span>
               <span class="menu-item-label">Customization</span>
-            <% end %>
+            </.link>
           </li>
           <li>
-            <%= live_redirect(to: ~p"/settings/security", class: nav_class(@path, "/settings/security")) do %>
+            <.link navigate={~p"/settings/security"} class={nav_class(@path, "/settings/security")}>
               <span class="icon"><i class="mdi mdi-lock"></i></span>
               <span class="menu-item-label">Security</span>
-            <% end %>
+            </.link>
           </li>
         </ul>
         <p class="menu-label">Diagnostics</p>
         <ul class="menu-list">
           <li>
-            <%= live_redirect(to: ~p"/diagnostics/connectivity_checks", class: nav_class(@path, "/diagnostics/connectivity_checks")) do %>
+            <.link
+              navigate={~p"/diagnostics/connectivity_checks"}
+              class={nav_class(@path, "/diagnostics/connectivity_checks")}
+            >
               <span class="icon"><i class="mdi mdi-access-point"></i></span>
               <span class="menu-item-label">WAN Connectivity</span>
-            <% end %>
+            </.link>
           </li>
         </ul>
       </div>

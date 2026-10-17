@@ -1,7 +1,7 @@
 services:
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18.6-alpine
     container_name: firezone-db-dev
     #ports:
     #  - "5432:5432"
@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
 
   firezone:
     build:
@@ -27,9 +27,9 @@ services:
       DATABASE_PORT: 5432
       MIX_ENV: dev
     volumes:
-      - .:/app
-      - /app/deps
-      - /app/_build    
+      - .:/var/app
+      - /var/app/deps
+      - /var/app/_build
     depends_on:
       - postgres
     command: mix phx.server

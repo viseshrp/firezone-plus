@@ -60,10 +60,10 @@ defmodule FzHttpWeb.SettingLive.ClientDefaultsTest do
 
       refute test_view =~ "is invalid"
 
-      assert test_view =~ """
-             <textarea class="textarea " id="client_defaults_form_component_default_client_allowed_ips" name="configuration[default_client_allowed_ips]" placeholder="0.0.0.0/0, ::/0">
-             1.1.1.1</textarea>\
-             """
+      assert test_view
+             |> Floki.parse_document!()
+             |> Floki.find("#client_defaults_form_component_default_client_allowed_ips")
+             |> Floki.text() == "1.1.1.1"
     end
 
     test "updates default client dns", %{view: view} do
@@ -103,12 +103,15 @@ defmodule FzHttpWeb.SettingLive.ClientDefaultsTest do
         |> element("#client_defaults_form_component")
         |> render()
 
-      assert Floki.find(test_view, "#client_defaults_form_component_default_client_endpoint") ==
+      assert Floki.find(
+               Floki.parse_document!(test_view),
+               "#client_defaults_form_component_default_client_endpoint"
+             ) ==
                [
                  {"input",
                   [
                     {"class", "input "},
-                    {"disabled", "disabled"},
+                    {"disabled", ""},
                     {"id", "client_defaults_form_component_default_client_endpoint"},
                     {"name", "configuration[default_client_endpoint]"},
                     {"placeholder", "firezone.example.com"},
@@ -155,7 +158,7 @@ defmodule FzHttpWeb.SettingLive.ClientDefaultsTest do
       assert test_view =~ "is invalid"
 
       assert Floki.find(
-               test_view,
+               Floki.parse_document!(test_view),
                "#client_defaults_form_component_default_client_allowed_ips"
              ) == [
                {"textarea",
@@ -164,7 +167,7 @@ defmodule FzHttpWeb.SettingLive.ClientDefaultsTest do
                   {"id", "client_defaults_form_component_default_client_allowed_ips"},
                   {"name", "configuration[default_client_allowed_ips]"},
                   {"placeholder", "0.0.0.0/0, ::/0"}
-                ], ["\nfoobar"]}
+                ], ["foobar"]}
              ]
     end
 

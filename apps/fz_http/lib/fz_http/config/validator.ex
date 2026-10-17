@@ -64,26 +64,21 @@ defmodule FzHttp.Config.Validator do
   def validate(key, value, type, opts) do
     callback = Keyword.get(opts, :changeset, fn changeset, _key -> changeset end)
 
-    # Handle parameterized types by calling the module's cast function directly
-    case type do
-      {:parameterized, module, params} ->
-        case apply(module, :cast, [value, params]) do
-          {:ok, casted_value} -> {:ok, casted_value}
-          :error -> {:error, {value, ["is invalid"]}}
-          {:error, reason} -> {:error, {value, [to_string(reason)]}}
-        end
+    ecto_type =
+      case type do
+        {:parameterized, module, params} -> {:parameterized, {module, params}}
+        type -> type
+      end
 
-      _ ->
-        changeset =
-          {%{}, %{key => type}}
-          |> cast(%{key => value}, [key])
-          |> apply_validations(callback, type, key)
+    changeset =
+      {%{}, %{key => ecto_type}}
+      |> cast(%{key => value}, [key])
+      |> apply_validations(callback, type, key)
 
-        if changeset.valid? do
-          {:ok, Map.get(changeset.changes, key)}
-        else
-          {:error, {Map.get(changeset.changes, key, value), errors(changeset)}}
-        end
+    if changeset.valid? do
+      {:ok, Map.get(changeset.changes, key)}
+    else
+      {:error, {Map.get(changeset.changes, key, value), errors(changeset)}}
     end
   end
 
@@ -166,6 +161,7 @@ defmodule FzHttp.Config.Validator do
   defp embedded_errors(changeset) do
     changeset
     |> traverse_errors()
+    |> Enum.sort_by(fn {key, _error} -> key end)
     |> Enum.map(fn {key, error} ->
       "#{key} #{error}"
     end)
