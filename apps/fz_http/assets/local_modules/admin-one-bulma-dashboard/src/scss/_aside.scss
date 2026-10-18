@@ -62,6 +62,21 @@ aside.aside {
   }
 
   .menu-list {
+    a {
+      background-color: transparent;
+      color: $menu-item-color;
+
+      &:hover {
+        background-color: $menu-item-hover-background-color;
+        color: $menu-item-hover-color;
+      }
+
+      &.is-active {
+        background-color: $menu-item-active-background-color;
+        color: $menu-item-active-color;
+      }
+    }
+
     li {
       a {
         &.has-dropdown-icon {

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
-    "postbuild": "next-sitemap",
+    "test": "node --test test/*.test.mjs",
     "start": "next start",
     "lint": "tsc --noEmit"
   },
@@ -29,7 +29,6 @@
     "md5": "^2.3.0",
     "next": "^16.4.2",
     "next-hubspot": "^2.0.1",
-    "next-sitemap": "^4.2.3",
     "postcss": "^8.5.30",
     "posthog-js": "^1.438.12",
     "react": "^19.3.1",

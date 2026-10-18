@@ -1,3 +1,65 @@
+@use "theme-firezone" as theme;
+@use "bulma/sass" as bulma with (
+  $family-primary: theme.$family-primary,
+  $family-code: theme.$family-monospace,
+  $primary: theme.$primary,
+  $link: theme.$link,
+  $info: theme.$info,
+  $success: theme.$success,
+  $warning: theme.$warning,
+  $danger: theme.$danger,
+  $text: theme.$text,
+  $text-weak: theme.$text-light,
+  $text-strong: theme.$text-strong,
+  $body-background-color: theme.$body-background-color,
+  $menu-item-radius: theme.$menu-item-radius,
+  $menu-list-link-padding: theme.$menu-list-link-padding,
+  $menu-label-color: theme.$menu-label-color,
+  $card-shadow: theme.$card-shadow,
+  $card-header-shadow: theme.$card-header-shadow,
+  $modal-card-head-background-color: theme.$modal-card-head-background-color,
+  $modal-card-title-size: theme.$modal-card-title-size,
+  $modal-card-body-padding: theme.$modal-card-body-padding,
+  $modal-card-foot-background-color: theme.$modal-card-foot-background-color,
+  $notification-padding: theme.$notification-padding,
+  $footer-background-color: theme.$footer-background-color,
+  $footer-padding: theme.$footer-padding,
+  $progress-bar-background-color: theme.$progress-bar-background-color
+);
+@use "bulma/sass/utilities/mixins" as *;
+
+// Values used by the retained dashboard partials and tooltip extension.
+// Bulma itself is compiled above through its supported module interface.
+$white: bulma.$white;
+$white-ter: bulma.$white-ter;
+$grey: bulma.$grey;
+$grey-dark: bulma.$grey-dark;
+$grey-lighter: bulma.$grey-lighter;
+$radius-small: bulma.$radius-small;
+$radius-large: bulma.$radius-large;
+$radius-rounded: bulma.$radius-rounded;
+$size-7: bulma.$size-7;
+// Tooltip 1.2 still expects the pre-v1 color/inverted-color pairs.
+$colors: (
+  "white": (#fff, #000),
+  "black": (#000, #fff),
+  "light": (theme.$interface-800, theme.$text),
+  "dark": (theme.$interface-main, #fff),
+  "primary": (theme.$primary, #fff),
+  "link": (theme.$link, #fff),
+  "info": (theme.$info, #fff),
+  "success": (theme.$success, #000),
+  "warning": (theme.$warning, #000),
+  "danger": (theme.$danger, #fff)
+);
+$navbar-height: bulma.$navbar-height;
+$card-content-padding: bulma.$card-content-padding;
+$button-background-color: var(--bulma-scheme-main);
+$button-color: var(--bulma-text);
+$button-border-color: var(--bulma-border);
+$button-active-border-color: var(--bulma-border);
+$notification-background-color: var(--bulma-background);
+
 /* Theme style (colors & sizes) */
 @import "theme-firezone";
 

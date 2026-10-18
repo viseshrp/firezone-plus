@@ -16,12 +16,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "bulma": "0.9.4",
-    "bulma-checkbox": "^1.2.1",
-    "bulma-radio": "^1.2.0",
-    "bulma-responsive-tables": "^1.2.5",
-    "bulma-switch-control": "^1.2.2",
-    "bulma-upload-control": "^1.2.0",
+    "bulma": "1.0.4",
     "sass": "^1.105.2"
   }
 }

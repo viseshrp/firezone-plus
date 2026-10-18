@@ -35,9 +35,6 @@ $interface-700: #ebebea;
 $interface-800: #f8f7f7;
 $interface-900: #fcfcfc;
 
-/* We'll need some initial vars to use here */
-@import "node_modules/bulma/sass/utilities/initial-variables";
-
 /* Base: Size  */
 $size-base: 1rem;
 $default-padding: $size-base * 1.5;
@@ -140,7 +137,7 @@ $modal-card-foot-background-color: $interface-800;
 $notification-padding: $default-padding * .75 $default-padding;
 
 /* Footer: Bulma override */
-$footer-background-color: $white;
+$footer-background-color: #fff;
 $footer-padding: $default-padding * .33 $default-padding;
 
 /* Footer: specifics */

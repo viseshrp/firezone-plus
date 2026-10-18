@@ -51,7 +51,7 @@ Firezone can be installed via Docker and Docker Compose.
 Public container images are available on [GHCR](https://github.com/users/viseshrp/packages/container/package/firezone-plus):
 
 ```sh
-# The verified Raspberry Pi release (linux/arm64)
+# The earlier verified Raspberry Pi release (linux/arm64)
 docker pull ghcr.io/viseshrp/firezone-plus:7.2.25-plus.1
 
 # Nightly builds from main (linux/amd64 and linux/arm64)
@@ -62,6 +62,10 @@ Nightly images are built at 07:17 UTC each day. Each successful build also gets 
 unique `nightly-YYYYMMDD-RUN-ATTEMPT` tag. Review [the maintenance guide](MAINTENANCE.md#nightly-container-builds)
 before upgrading an existing installation; image publication does not update a running server.
 
+The October 18 Bulma and security fixes are included in the `7.2.26-plus.1`
+nightly series. The retained `7.2.25-plus.1` image predates those fixes. See
+[the security maintenance notes](MAINTENANCE.md#security-maintenance-october-18-2026).
+
 The example Compose project below builds locally. To use a published image in an
 existing deployment, change only its Firezone image reference and preserve its
 database, private environment, keys, mounts, network, and ports.
@@ -70,7 +74,7 @@ database, private environment, keys, mounts, network, and ports.
 # clone the source and build the image
 git clone --branch main https://github.com/viseshrp/firezone-plus.git
 cd firezone-plus
-docker build -f Dockerfile.prod --build-arg VERSION=7.2.25-plus.1 -t firezone-plus:local .
+docker build -f Dockerfile.prod --build-arg VERSION=7.2.26-plus.1 -t firezone-plus:local .
 
 # generate an .env file
 docker run --rm firezone-plus:local bin/gen-env > .env

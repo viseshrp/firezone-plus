@@ -25,8 +25,8 @@ token adapter; the library upgrade adds no application database migration.
 
 ### Retained versions and audit findings
 
-- Bulma stays at 0.9.4. The retained dashboard extensions import Sass utilities
-  removed by Bulma 1; that upgrade needs a separate theme port.
+- The initial refresh retained Bulma 0.9.4. The October 18 theme port below
+  upgrades it to 1.0.4 and removes the obsolete control extensions.
 - The Firezone CIDR, esaml, and Samly forks are pinned to their latest existing
   commits. They contain Firezone-specific behavior, including SAML provider
   refresh support. Replacing them with unrelated Hex versions loses that behavior.
@@ -37,35 +37,73 @@ token adapter; the library upgrade adds no application database migration.
 - The SAML identity-provider test image has no newer publisher release and is
   pinned by digest. Its old bundled software is confined to the test fixture.
 
-The application asset audit reports zero vulnerabilities. The website audit
-still reports the `braces` advisory through `next-sitemap`, `fast-glob`, and
-`micromatch` (four affected dependency entries). No patched braces release is
-available; npm's suggested fix downgrades next-sitemap. This is website build
-tooling, not part of the VPN runtime image.
-See [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
+The October 17 audits recorded the Cloak AES-CTR, Cloak PBKDF2, Cowlib structured
+header, and website `braces` advisories. The following maintenance update fixes
+the affected dependency paths rather than relying on unused APIs or a server
+mitigation.
 
-Hex still reports three advisories in current releases:
-[Cloak AES-CTR](https://cna.erlef.org/cves/CVE-2026-95105.html),
-[Cloak PBKDF2](https://cna.erlef.org/cves/CVE-2026-94206.html), and
-[Cowlib structured headers](https://cna.erlef.org/cves/CVE-2026-43966.html).
-This application's vault already uses AES-GCM and does not use Cloak PBKDF2.
-Cowboy 2.20 includes the response-header rejection described by the Cowlib
-advisory as a server-side mitigation. These observations do not make the package
-advisories disappear or establish that all dependency vulnerabilities are fixed.
+## Security maintenance: October 18, 2026
+
+The `7.2.26-plus.1` nightly series includes Bulma 1.0.4 and the dashboard port.
+Bulma is compiled through its supported Sass module interface with the Firezone
+palette. Native radio, checkbox, file, and table styles replace the old extension
+packages. A local switch keeps the real checkbox focusable for keyboard users.
+The rules page uses the responsive grid in place of deprecated tiles. The light
+theme remains explicit because the retained dashboard has no dark theme.
+
+Security changes:
+
+- Remove both unauthenticated AES-CTR implementations from the Docker dependency
+  sources. Retain AES-GCM's stored data format and report authentication failure
+  as an error. Existing AES-GCM ciphertext remains readable with the same keys.
+- Backport Cloak Ecto's PBKDF2 correction using OTP's native implementation,
+  passing the configured iteration count and derived-key length separately.
+- Pin Cowlib to upstream fix `4401b858f2229abb3ea115c60924f6c77e5f8aa3`, which
+  rejects non-printable bytes in structured header strings.
+- Replace `next-sitemap` with Next's native sitemap and robots metadata routes,
+  removing the [vulnerable `braces`/`micromatch`/`fast-glob` chain](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm). `SITE_URL` remains
+  supported, and all static public App Router pages are enumerated at build time.
+
+The [vendored security sources](vendor/security/README.md) include upstream
+licenses and patch rationale. They are explicit path dependencies, and Cowlib is
+a pinned Git dependency: Hex's registry audit does not inspect these sources.
+Application regression tests verify known PBKDF2 vectors, rejection of forged GCM
+data, legacy ciphertext compatibility, absent CTR modules, and structured-header
+input rejection. Do not interpret a clean registry audit as a source-code audit.
+
+Validation on October 18 passed 697 unit/doctests, 48 browser acceptance tests,
+two sitemap tests, the production website build and type check, and application
+compile/format/Credo checks. The application and website npm audits reported zero
+findings, and `mix hex.audit` reported no retired or advisory packages. The old
+unused Hex lock entries for Cloak were removed when switching to the explicit
+security sources; no advisory ignore list is used.
+
+An isolated production Docker release also completed the 57 existing migrations
+on a fresh test database, served its management page, and created and re-read an
+encrypted device record. The record remained readable after an explicit container
+restart, and its raw database value was ciphertext. This was a disposable local
+test, not a deployment to the VPN host or a live client handshake check.
+
+Run both npm audits, `mix hex.audit`, the application tests and browser acceptance
+suite, and the website build and sitemap tests when refreshing these dependencies.
+Nightly image smoke checks also verify that the GCM implementation is packaged
+and the two CTR modules are absent. This change adds no database migration and
+does not alter the native installer archive. The retained `7.2.25-plus.1` release
+and existing installations are not updated by publishing a nightly image.
 
 ## Build
 
 ```sh
 docker build -f Dockerfile.prod \
-  --build-arg VERSION=7.2.25-plus.1 \
+  --build-arg VERSION=7.2.26-plus.1 \
   --build-arg VCS_REF="$(git rev-parse HEAD)" \
-  -t firezone-plus:7.2.25-plus.1 .
+  -t firezone-plus:7.2.26-plus.1 .
 
 # Build for the Raspberry Pi deployment from an ARM64 Mac:
 docker buildx build --platform linux/arm64 --load \
-  -f Dockerfile.prod --build-arg VERSION=7.2.25-plus.1 \
+  -f Dockerfile.prod --build-arg VERSION=7.2.26-plus.1 \
   --build-arg VCS_REF="$(git rev-parse HEAD)" \
-  -t firezone-plus:7.2.25-plus.1 .
+  -t firezone-plus:7.2.26-plus.1 .
 ```
 
 The production image contains the compiled OTP release and runtime packages.

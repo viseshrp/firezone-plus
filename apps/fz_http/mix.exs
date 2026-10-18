@@ -68,8 +68,12 @@ defmodule FzHttp.MixProject do
       # by the byte-formatting regression tests alongside Ecto 3.14.
       {:decimal, "~> 3.2.0", override: true},
       {:ecto_sql, "~> 3.14.0"},
-      {:cloak, "~> 1.1.4"},
-      {:cloak_ecto, "~> 1.3.0"},
+      # Security backports retain the existing AES-GCM storage format.
+      {:cloak, path: "../../vendor/security/cloak", override: true},
+      {:cloak_ecto, path: "../../vendor/security/cloak_ecto"},
+      # The upstream structured-header serializer fix is not in a Hex release yet.
+      {:cowlib,
+       github: "ninenines/cowlib", ref: "4401b858f2229abb3ea115c60924f6c77e5f8aa3", override: true},
 
       # Auth-related deps
       {:guardian, "~> 2.5.0"},

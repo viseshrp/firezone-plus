@@ -23,6 +23,7 @@ COPY mix.exs mix.lock ./
 COPY apps/fz_http/mix.exs ./apps/fz_http/mix.exs
 COPY apps/fz_vpn/mix.exs ./apps/fz_vpn/mix.exs
 COPY apps/fz_wall/mix.exs ./apps/fz_wall/mix.exs
+COPY vendor/security ./vendor/security
 
 RUN mix deps.get --only $MIX_ENV
 

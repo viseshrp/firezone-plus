@@ -6,12 +6,15 @@ deps
 website/node_modules
 website/.next
 website/out
-vendor
+vendor/*
+!vendor/security
+!vendor/security/**
 omnibus/vendor
 .env
 .env.*
 apps/fz_http/priv/wg_dev_private_key
 apps/fz_http/priv/static/uploads
+apps/fz_http/screenshots
 **/cover
 docs
 .DS_Store

@@ -15,24 +15,26 @@
   </div>
 
   <%= render(FzHttpWeb.SharedView, "flash.html", assigns) %>
-  <div class="tile is-ancestor">
-    <div class="tile is-parent">
-      <%= live_component(
-        FzHttpWeb.RuleLive.RuleListComponent,
-        title: "Allowlist",
-        header_icon: "mdi mdi-arrow-decision-outline",
-        id: :allowlist,
-        subject: @subject
-      ) %>
-    </div>
-    <div class="tile is-parent">
-      <%= live_component(
-        FzHttpWeb.RuleLive.RuleListComponent,
-        title: "Denylist",
-        header_icon: "mdi mdi-alert-octagon",
-        id: :denylist,
-        subject: @subject
-      ) %>
+  <div class="fixed-grid has-2-cols-tablet has-1-cols-mobile">
+    <div class="grid">
+      <div class="cell">
+        <%= live_component(
+          FzHttpWeb.RuleLive.RuleListComponent,
+          title: "Allowlist",
+          header_icon: "mdi mdi-arrow-decision-outline",
+          id: :allowlist,
+          subject: @subject
+        ) %>
+      </div>
+      <div class="cell">
+        <%= live_component(
+          FzHttpWeb.RuleLive.RuleListComponent,
+          title: "Denylist",
+          header_icon: "mdi mdi-alert-octagon",
+          id: :denylist,
+          subject: @subject
+        ) %>
+      </div>
     </div>
   </div>
 </section>
