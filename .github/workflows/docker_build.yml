@@ -1,183 +1,172 @@
-name: Docker Build
+name: Nightly container
 
 on:
-  push:
-    branches:
-      - legacy
-      - 'build/**'      
-  pull_request:
+  schedule:
+    # Off the hour to avoid the busiest scheduler window; always UTC.
+    - cron: '17 7 * * *'
+  workflow_dispatch:
 
 permissions:
-  contents: write
-  packages: write
-  pull-requests: write
+  contents: read
+
+concurrency:
+  group: nightly-container
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/viseshrp/firezone-plus
+  BASE_VERSION: 7.2.25-plus.1
 
 jobs:
-
-  changelog:
-    name: Changelog
-    if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-
+  prepare:
+    if: github.repository == 'viseshrp/firezone-plus' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
-      skipped: ${{ steps.changelog.outputs.skipped }}
-      tag: ${{ steps.changelog.outputs.tag }}
-      clean_changelog: ${{ steps.changelog.outputs.clean_changelog }}
-      version: ${{ steps.changelog.outputs.version }}
-
+      revision: ${{ steps.metadata.outputs.revision }}
+      version: ${{ steps.metadata.outputs.version }}
+      tag: ${{ steps.metadata.outputs.tag }}
+      created: ${{ steps.metadata.outputs.created }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Record the main revision and build identity
+        id: metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          stamp="$(date -u +%Y%m%d)"
+          echo "revision=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+          echo "version=$BASE_VERSION.nightly.$stamp.$GITHUB_RUN_NUMBER.$GITHUB_RUN_ATTEMPT+${GITHUB_SHA:0:12}" >> "$GITHUB_OUTPUT"
+          echo "tag=nightly-$stamp-$GITHUB_RUN_NUMBER-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+          echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
-      - name: Conventional Changelog Action
-        id: changelog
-        uses: TriPSs/conventional-changelog-action@469f0e5e35831fbd1962706f29f65daf0a5723f2 # v6.5.0
-        with:
-          preset: "conventionalcommits"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-  deploy:
-    name: Deploy Image
-    needs: [changelog]
-    if: github.event_name != 'pull_request' && needs.changelog.outputs.skipped == 'false'
-    runs-on: ubuntu-latest
+  build:
+    name: Build and smoke test (${{ matrix.arch }})
+    needs: prepare
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
     permissions:
       contents: read
       packages: write
-    env:
-      REGISTRY: docker.io
-      IMAGE_NAME: firezone  
-
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            machine: x86_64
+            runner: ubuntu-24.04
+          - arch: arm64
+            platform: linux/arm64
+            machine: aarch64
+            runner: ubuntu-24.04-arm
     steps:
-
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-
-      - name: Get repository name
-        id: get_repo
-        run: echo "REPO_NAME=$(echo ${{ github.repository }} | cut -d'/' -f2 | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
-      - name: Login to Dockerhub
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-      - name: Extract version parts
-        id: extract_version
-        run: |
-          VERSION=${{ needs.changelog.outputs.version }}
-          MAJOR_MINOR=$(echo $VERSION | cut -d'.' -f1,2)
-          echo "MAJOR_MINOR_TAG=${MAJOR_MINOR}.x" >> $GITHUB_ENV
-
-      - name: Setup Docker Metadata
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
-        id: meta
-        with:
-          images: |
-            docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.REPO_NAME }}
-          tags: |
-            latest
-            ${{ needs.changelog.outputs.version }}
-            ${{ env.MAJOR_MINOR_TAG }}            
-
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        with:
-          platforms: linux/amd64
-          file: Dockerfile.prod
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-              VERSION=${{ needs.changelog.outputs.version }}
-
-  deploy-arm:
-    name: Deploy ARM Image
-    needs: [changelog, deploy]
-    if: github.event_name != 'pull_request' && needs.changelog.outputs.skipped == 'false'
-    runs-on: ubuntu-24.04-arm
-    permissions:
-      contents: read
-      packages: write
-    env:
-      REGISTRY: docker.io
-      IMAGE_NAME: firezone  
-
-    steps:
-
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-
-      - name: Get repository name
-        id: get_repo
-        run: echo "REPO_NAME=$(echo ${{ github.repository }} | cut -d'/' -f2 | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
-      - name: Login to Dockerhub
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-      - name: Extract version parts
-        id: extract_version
-        run: |
-          VERSION=${{ needs.changelog.outputs.version }}
-          MAJOR_MINOR=$(echo $VERSION | cut -d'.' -f1,2)
-          echo "MAJOR_MINOR_TAG=${MAJOR_MINOR}.x" >> $GITHUB_ENV
-
-      - name: Setup Docker Metadata
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
-        id: meta
-        with:
-          images: |
-            docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.REPO_NAME }}
-          tags: |
-            latest-arm64
-            ${{ needs.changelog.outputs.version }}-arm64
-            ${{ env.MAJOR_MINOR_TAG }}-arm64
-
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        with:
-          platforms: linux/arm64
-          file: Dockerfile.prod
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-              VERSION=${{ needs.changelog.outputs.version }}
-  
-  release:
-    name: Release
-    needs: [changelog, deploy]
-    if: github.event_name != 'pull_request' && needs.changelog.outputs.skipped == 'false'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
+      - name: Check out the exact main revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-  
-      - name: Debug Changelog Outputs
-        run: echo ${{ needs.changelog.outputs.tag }}
-        
-      - name: Create Release
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag_name: ${{ needs.changelog.outputs.tag }}
-          prerelease: false
-          draft: false
-          generate_release_notes: true
-          name: ${{ needs.changelog.outputs.tag }}
-          body: |
-            <details>
-              <summary>🤖 Autogenerated Conventional Changelog</summary>
-  
-            ${{ needs.changelog.outputs.clean_changelog }}
-            </details>
+          ref: ${{ needs.prepare.outputs.revision }}
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: Dockerfile.prod
+          platforms: ${{ matrix.platform }}
+          pull: true
+          no-cache: true
+          build-args: |
+            VERSION=${{ needs.prepare.outputs.version }}
+            VCS_REF=${{ needs.prepare.outputs.revision }}
+          labels: |
+            org.opencontainers.image.created=${{ needs.prepare.outputs.created }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Smoke test the published platform image
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          EXPECTED_ARCH: ${{ matrix.machine }}
+          EXPECTED_VERSION: ${{ needs.prepare.outputs.version }}
+          EXPECTED_REVISION: ${{ needs.prepare.outputs.revision }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_version="$(docker run --rm --entrypoint /app/bin/firezone "$IMAGE@$DIGEST" version)"
+          test "$actual_version" = "firezone $EXPECTED_VERSION"
+          actual_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$IMAGE@$DIGEST")"
+          test "$actual_revision" = "$EXPECTED_REVISION"
+          docker run --rm --entrypoint /bin/sh "$IMAGE@$DIGEST" -ec \
+            'test -x /app/bin/server; command -v nft >/dev/null; test "$(uname -m)" = "$1"' \
+            sh "$EXPECTED_ARCH"
+          mkdir -p "$RUNNER_TEMP/digests"
+          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+
+      - name: Export the verified platform digest
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: digests-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          retention-days: 1
+          if-no-files-found: error
+
+  publish:
+    name: Publish nightly manifest
+    needs: [prepare, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Download verified platform digests
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: digests-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/digests
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish tags after both platforms pass
+        env:
+          NIGHTLY_TAG: ${{ needs.prepare.outputs.tag }}
+          REVISION: ${{ needs.prepare.outputs.revision }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sources=()
+          for digest in "$RUNNER_TEMP"/digests/*; do
+            sources+=("$IMAGE@sha256:$(basename "$digest")")
+          done
+          test "${#sources[@]}" -eq 2
+          docker buildx imagetools create \
+            --tag "$IMAGE:nightly" \
+            --tag "$IMAGE:$NIGHTLY_TAG" \
+            "${sources[@]}"
+          docker buildx imagetools inspect "$IMAGE:nightly" --raw > "$RUNNER_TEMP/nightly.json"
+          jq -e '[.manifests[].platform | select(.os == "linux") | .architecture] | sort == ["amd64", "arm64"]' \
+            "$RUNNER_TEMP/nightly.json"
+          {
+            echo "Image: $IMAGE:nightly"
+            echo "Build tag: $IMAGE:$NIGHTLY_TAG"
+            echo "Source revision: $REVISION"
+            echo "Platforms: linux/amd64, linux/arm64"
+          } >> "$GITHUB_STEP_SUMMARY"

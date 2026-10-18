@@ -72,6 +72,48 @@ The production image contains the compiled OTP release and runtime packages.
 It does not include the website, development dependencies, or native installer
 toolchain. Use a new version tag for every distinct build and record its image ID.
 
+## Nightly container builds
+
+`main` is the default maintenance branch. The retained `legacy` branch records
+the earlier dependency-refresh baseline.
+
+[Nightly container](https://github.com/viseshrp/firezone-plus/actions/workflows/docker_build.yml)
+runs daily at **07:17 UTC** (03:17 US Eastern during daylight saving time,
+02:17 during standard time), with an additional manual `workflow_dispatch`
+trigger for one-off verification. GitHub can delay scheduled runs; a missed run
+does not cause a backlog of builds. GitHub also disables scheduled workflows in
+public repositories after 60 days without repository activity; re-enable the
+workflow if that occurs.
+
+The workflow builds the exact triggering `main` commit on native AMD64 and ARM64
+GitHub-hosted runners. It pulls fresh base images and builds without the Docker
+layer cache, including the current runtime OS packages. Committed application
+lockfiles remain authoritative. Each platform must pass release-version,
+source-revision, runtime-tool, and architecture smoke checks before the combined
+manifest receives its public tags:
+
+- `ghcr.io/viseshrp/firezone-plus:nightly` moves to the latest successful build.
+- `ghcr.io/viseshrp/firezone-plus:nightly-YYYYMMDD-RUN-ATTEMPT` identifies one run.
+
+The existing `7.2.25-plus.1` ARM64 release tag is retained. Nightly versions include
+the UTC date, workflow run and attempt, and source revision; OCI labels record the
+full source commit and build time. These smoke checks do not replace the
+application, database-upgrade, and client VPN checks required before deployment.
+
+Publishing uses the workflow's short-lived `GITHUB_TOKEN` with package-write
+access for this repository. No personal access token or Docker Hub credentials
+are required. The workflow replaces the inherited Docker Hub release publisher;
+it does not deploy images, edit dependency lockfiles, or create source releases.
+
+To run a build immediately:
+
+```sh
+gh workflow run docker_build.yml --repo viseshrp/firezone-plus --ref main
+```
+
+See [GitHub's schedule behavior](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
+and [workflow activation rules](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/disable-and-enable-workflows).
+
 ## Existing-installation upgrade
 
 Preserve the installed Compose project name, private environment, salts, database
