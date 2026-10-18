@@ -74,6 +74,8 @@ defmodule FzHttp.MixProject do
       # The upstream structured-header serializer fix is not in a Hex release yet.
       {:cowlib,
        github: "ninenines/cowlib", ref: "4401b858f2229abb3ea115c60924f6c77e5f8aa3", override: true},
+      # The test-only Bypass copy uses Ranch 2's listener lifecycle.
+      {:ranch, "~> 2.3.0", override: true},
 
       # Auth-related deps
       {:guardian, "~> 2.5.0"},
@@ -104,7 +106,7 @@ defmodule FzHttp.MixProject do
       {:observer_cli, "~> 2.0.0"},
 
       # Test and dev deps
-      {:bypass, "~> 2.1.0", only: :test},
+      {:bypass, path: "../../vendor/security/bypass", only: :test},
       {:wallaby, "~> 0.31.0", only: :test},
       {:bureaucrat, "~> 0.2.10", only: :test},
       {:floki, "~> 0.38.4"},

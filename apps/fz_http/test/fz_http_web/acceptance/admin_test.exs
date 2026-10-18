@@ -383,11 +383,13 @@ defmodule FzHttpWeb.Acceptance.AdminTest do
       |> toggle("disable_vpn_on_oidc_error")
       |> assert_el(Query.text("Security Settings"))
 
-      assert configuration = FzHttp.Config.fetch_db_config!()
-      assert configuration.local_auth_enabled == false
-      assert configuration.allow_unprivileged_device_management == false
-      assert configuration.allow_unprivileged_device_configuration == false
-      assert configuration.disable_vpn_on_oidc_error == true
+      wait_for(fn ->
+        assert configuration = FzHttp.Config.fetch_db_config!()
+        assert configuration.local_auth_enabled == false
+        assert configuration.allow_unprivileged_device_management == false
+        assert configuration.allow_unprivileged_device_configuration == false
+        assert configuration.disable_vpn_on_oidc_error == true
+      end)
     end
 
     feature "change required authentication timeout", %{session: session} do

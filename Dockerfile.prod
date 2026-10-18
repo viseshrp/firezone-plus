@@ -6,7 +6,8 @@ ARG RUNNER_IMAGE="elixir:${ELIXIR_VERSION}-alpine"
 FROM ${BUILDER_IMAGE} AS builder
 
 # install build dependencies
-RUN apk add nodejs npm build-base git python3 openssl-dev
+RUN apk upgrade --no-cache && \
+    apk add --no-cache nodejs npm build-base git python3 openssl-dev cargo rust
 
 # prepare build dir
 WORKDIR /app
@@ -33,7 +34,10 @@ RUN mkdir config
 # to ensure any relevant config change will trigger the dependencies
 # to be re-compiled.
 COPY config/config.exs config/${MIX_ENV}.exs config/
-RUN mix deps.compile
+RUN cargo fetch --locked --manifest-path vendor/security/wireguardex/native/wireguard_nif/Cargo.toml && \
+    mix deps.compile && \
+    cargo tree --locked --prefix none --manifest-path vendor/security/wireguardex/native/wireguard_nif/Cargo.toml \
+      > /tmp/wireguard-native-deps.txt
 
 COPY priv priv
 COPY apps apps
@@ -69,7 +73,7 @@ LABEL org.opencontainers.image.source="https://github.com/viseshrp/firezone-plus
       org.opencontainers.image.revision="${VCS_REF}"
 
 # Install runtime dependencies
-RUN apk add -u --no-cache \
+RUN apk upgrade --no-cache && apk add --no-cache \
     nftables \
     openssl \
     openssl-dev
@@ -81,5 +85,7 @@ ENV MIX_ENV="prod"
 
 # Only copy the final release from the build stage
 COPY --from=builder /app/_build/${MIX_ENV}/rel/firezone ./
+COPY --from=builder /app/vendor/security/wireguardex/native/wireguard_nif/Cargo.lock /usr/share/firezone-plus/wireguard-native-Cargo.lock
+COPY --from=builder /tmp/wireguard-native-deps.txt /usr/share/firezone-plus/wireguard-native-deps.txt
 
 CMD ["/app/bin/server"]

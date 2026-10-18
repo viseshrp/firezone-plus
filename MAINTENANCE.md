@@ -91,19 +91,76 @@ and the two CTR modules are absent. This change adds no database migration and
 does not alter the native installer archive. The retained `7.2.25-plus.1` release
 and existing installations are not updated by publishing a nightly image.
 
+## Native and container maintenance: October 18, 2026
+
+The `7.2.27-plus.1` nightly series closes the audit gap below the Hex/npm
+dependencies. The upstream Wireguardex 0.4.0 release downloaded a precompiled
+2023 native library. Its bundled Curve25519 version and inherited Alpine zlib
+package were not covered by those registry audits.
+
+- Wireguardex is now a licensed local `0.4.0+firezone.1` source dependency. The
+  Docker build compiles it for each target architecture using Rustler's Hex
+  build integration 0.38.0 and native crate 0.39.0, with WireGuard control 2.0.0.
+  The committed Cargo lock resolves Curve25519 4.1.3, x25519-dalek 2.0.1 and
+  anyhow 1.0.104, removing the timing and error-downcast advisory versions.
+- A minimal MIT-licensed netlink-packet-utils source patch aliases its archived
+  `paste` macro dependency to maintained `pastey` 0.2.3. Netlink protocol parsing
+  and the public API are unchanged. Transitive crate API families remain aligned
+  with upstream WireGuard control's constraints.
+- Ranch is upgraded from 1.8.1 to 2.3.0. The test-only Bypass copy delegates
+  listening sockets to Ranch 2 instead of passing Ranch 1's pre-opened socket.
+  Unused `metrics` and `rustler_precompiled` lock entries are removed. The other
+  retained Hex packages match current stable releases. Node 24 LTS and its
+  matching type definitions remain intentional.
+- Both Docker stages upgrade all inherited Alpine packages before installing
+  dependencies. This includes zlib 1.3.2-r1's CVE-2026-85091 fix. Rust/Cargo are
+  build tools; the production runner does not install them.
+
+Run `python3 scripts/audit-native-dependencies.py` as well as Hex/npm audits.
+It checks every registry crate in the committed native Cargo lock against OSV
+and fails on advisory or maintenance matches; it has no ignore list. Path
+dependencies require direct patch review and tests, as documented in
+`vendor/security/README.md`. Native compilation begins with `cargo fetch --locked`.
+The final image includes the exact Cargo lock and dependency tree under
+`/usr/share/firezone-plus/` so its native provenance can be verified.
+
+Nightly publication requires a clean native audit, byte equality between the
+source and image Cargo locks, patched zlib, and native key-vector/kernel-interface
+tests on both AMD64 and ARM64. Run the kernel test only inside a disposable
+container with NET_ADMIN:
+`mix run --no-start scripts/test-native-wireguard.exs`. It creates and removes
+its own interface and verifies key derivation, peer CRUD, PSKs, keepalives,
+endpoints, IPv4/IPv6 allowed IPs and listening-port settings. Never run it in a
+production VPN namespace.
+
+No new application database migration, stored-key conversion, PostgreSQL major
+upgrade, host package upgrade or reboot is part of this image update. Existing
+deployments still need a verified matched backup, restored-database rehearsal,
+explicit application restart and real client handshake/forwarding/DNS checks.
+The host kernel supplies Linux WireGuard and must be maintained separately.
+
+Validation passed 697 unit/doctests, 48 browser acceptance tests, the native
+kernel lifecycle/key-vector test, strict application compilation, formatting and
+Credo, website build/type checks and two sitemap tests. All 87 retained Hex
+registry packages matched their latest stable releases. Hex/npm audits and the
+56-crate native OSV audit reported no findings; Trivy 0.76.0 reported zero OS
+vulnerabilities in the ARM64 production candidate. The candidate's embedded Cargo
+lock matched the source byte for byte and zlib reported 1.3.2-r1. Browser checks
+wait for asynchronous security-setting writes and use bounded concurrency.
+
 ## Build
 
 ```sh
 docker build -f Dockerfile.prod \
-  --build-arg VERSION=7.2.26-plus.1 \
+  --build-arg VERSION=7.2.27-plus.1 \
   --build-arg VCS_REF="$(git rev-parse HEAD)" \
-  -t firezone-plus:7.2.26-plus.1 .
+  -t firezone-plus:7.2.27-plus.1 .
 
 # Build for the Raspberry Pi deployment from an ARM64 Mac:
 docker buildx build --platform linux/arm64 --load \
-  -f Dockerfile.prod --build-arg VERSION=7.2.26-plus.1 \
+  -f Dockerfile.prod --build-arg VERSION=7.2.27-plus.1 \
   --build-arg VCS_REF="$(git rev-parse HEAD)" \
-  -t firezone-plus:7.2.26-plus.1 .
+  -t firezone-plus:7.2.27-plus.1 .
 ```
 
 The production image contains the compiled OTP release and runtime packages.

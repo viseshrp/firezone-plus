@@ -1,6 +1,6 @@
 # Docker security backports
 
-These MIT-licensed sources are part of the Docker build. Preserve their upstream
+These sources are part of the Docker build. Preserve their upstream
 licenses when updating them. The versions include a `+firezone.1` suffix to
 distinguish these copies from the published packages.
 
@@ -12,6 +12,9 @@ security source directory, including when built separately.
 | --- | --- | --- |
 | [Cloak](https://github.com/danielberkompas/cloak) | 1.1.4 | Remove both unauthenticated AES-CTR cipher modules. Return an error on GCM authentication failure while preserving its stored ciphertext format. |
 | [Cloak Ecto](https://github.com/danielberkompas/cloak_ecto) | 1.3.0 | Use OTP's PBKDF2 implementation with explicit iteration count and key length; remove the obsolete external PBKDF2 dependency. |
+| [Wireguardex](https://github.com/firezone/wireguardex) (Apache-2.0) | 0.4.0 | Compile the NIF from locked Rust sources with Rustler 0.39 and WireGuard control 2.0; remove the old binary downloader. Preserve its Elixir API. |
+| [netlink-packet-utils](https://github.com/rust-netlink/netlink-packet-utils) (MIT) | 0.5.2 | Alias the archived `paste` dependency to maintained `pastey`; retain parsing code and API. |
+| [Bypass](https://github.com/PSPDFKit-labs/bypass) (MIT, test only) | 2.1.0 | Adopt Ranch 2's socket ownership and ephemeral-port allocation; retain HTTP expectation behavior. Not included in the production release. |
 
 The corresponding advisories are
 [CVE-2026-95105](https://cna.erlef.org/cves/CVE-2026-95105.html) and
@@ -33,3 +36,15 @@ for [CVE-2026-43966](https://cna.erlef.org/cves/CVE-2026-43966.html).
 Its regression test rejects non-printable bytes, including CR and LF, in
 structured header strings. Git dependencies also require direct review beyond
 the Hex registry audit.
+
+The Wireguardex native lock upgrades Curve25519 to 4.1.3 and anyhow to 1.0.104,
+addressing [RUSTSEC-2024-0344](https://rustsec.org/advisories/RUSTSEC-2024-0344.html)
+and [RUSTSEC-2026-0190](https://rustsec.org/advisories/RUSTSEC-2026-0190.html).
+Replacing the archived macro removes
+[RUSTSEC-2024-0436](https://rustsec.org/advisories/RUSTSEC-2024-0436.html).
+`scripts/audit-native-dependencies.py` checks registry crates, including
+informational advisories. It cannot audit these path patches; review them directly.
+Use the disposable kernel test plus application and deployed-client tests when
+changing the NIF or its netlink dependencies. The upstream `Cargo.toml.orig`
+inside netlink-packet-utils records the imported manifest; `Cargo.toml` contains
+the active dependency alias.

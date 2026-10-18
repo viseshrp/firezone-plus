@@ -9,6 +9,8 @@ website/out
 vendor/*
 !vendor/security
 !vendor/security/**
+vendor/security/wireguardex/native/wireguard_nif/target
+vendor/security/wireguardex/priv/native
 omnibus/vendor
 .env
 .env.*

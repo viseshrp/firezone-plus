@@ -1,0 +1,18 @@
+[package]
+name = "wireguard_nif"
+version = "0.4.0+firezone.1"
+authors = ["Jamil Bou Kheir <jamil@firezone.dev>"]
+edition = "2018"
+
+[lib]
+name = "wireguard_nif"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+rustler = "0.39.0"
+wireguard-control = "2.0.0"
+
+# Keep the upstream netlink API while replacing its archived macro dependency.
+[patch.crates-io]
+netlink-packet-utils = { path = "../../../netlink-packet-utils" }

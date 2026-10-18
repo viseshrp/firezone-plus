@@ -3,7 +3,10 @@
 FROM elixir:1.20.4-otp-29-alpine
 
 # Install dev dependencies / convenience tools
-RUN apk add \
+RUN apk upgrade --no-cache && apk add --no-cache \
+    cargo \
+    rust \
+    rustfmt \
     npm \
     build-base \
     git \
@@ -43,7 +46,9 @@ COPY apps/fz_wall/mix.exs /var/app/apps/fz_wall/mix.exs
 COPY mix.exs /var/app/mix.exs
 COPY mix.lock /var/app/mix.lock
 COPY vendor/security /var/app/vendor/security
-RUN mix do deps.get, deps.compile, compile
+RUN mix deps.get && \
+    cargo fetch --locked --manifest-path vendor/security/wireguardex/native/wireguard_nif/Cargo.toml && \
+    mix do deps.compile, compile
 
 # Copy more granular, dependency management files first to prevent
 # busting the Docker build cache unnecessarily
